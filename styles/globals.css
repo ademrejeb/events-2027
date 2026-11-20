@@ -1,0 +1,180 @@
+/*
+ * Cascade layer order. `@adem.rejeb/ui` ships an UNLAYERED reset
+ * (`* { margin: 0 }`). Unlayered author styles outrank layered ones, so
+ * without this, it overrides every Tailwind margin utility (mx-auto, mt-*,
+ * space-y-*, ...) app-wide. Importing the library `layer(personal-ui)`
+ * places it above Tailwind's `base` (so component styles still win over
+ * preflight) but below `utilities` (so Tailwind utilities can override).
+ */
+@layer theme, base, personal-ui, components, utilities;
+
+@import "tailwindcss";
+@import "../node_modules/@adem.rejeb/ui/dist/styles.css" layer(personal-ui);
+@import "../node_modules/maplibre-gl/dist/maplibre-gl.css" layer(base);
+
+:root {
+  --background: #ffffff;
+  --foreground: #18181b;
+
+  /* Brand palette: override the personal-ui accent tokens to Yed Lkhir red. */
+  --ui-p-accent-50: #fef2f2;
+  --ui-p-accent-100: #fee2e2;
+  --ui-p-accent-200: #fecaca;
+  --ui-p-accent-300: #fca5a5;
+  --ui-p-accent-400: #f87171;
+  --ui-p-accent-500: #ef4444;
+  --ui-p-accent-600: #dc2626;
+  --ui-p-accent-700: #b91c1c;
+  --ui-p-accent-800: #991b1b;
+  --ui-p-accent-900: #7f1d1d;
+}
+
+.dark {
+  --ui-p-accent-50: #fef2f2;
+  --ui-p-accent-100: #fee2e2;
+  --ui-p-accent-200: #fecaca;
+  --ui-p-accent-300: #fca5a5;
+  --ui-p-accent-400: #f87171;
+  --ui-p-accent-500: #ef4444;
+  --ui-p-accent-600: #dc2626;
+  --ui-p-accent-700: #b91c1c;
+  --ui-p-accent-800: #991b1b;
+  --ui-p-accent-900: #7f1d1d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-bricolage);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-bricolage), var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #dc2626;
+  color: #fff;
+}
+
+/*
+ * The UI library ships `a:hover { text-decoration: underline }` in its base
+ * layer, which underlined every link in the app (cards, nav, chips...). We
+ * prefer colour/background affordances. Opt in explicitly with `.link-underline`.
+ */
+a:hover {
+  text-decoration: none;
+}
+
+.link-underline:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/*
+ * The library reset (`* { margin: 0 }`) also cancels the browser default
+ * `dialog { margin: auto }`, which anchors every <dialog> modal to the
+ * top-left corner. Restore native centring for all modals.
+ */
+dialog {
+  margin: auto;
+}
+
+/* Route transition progress bar (see components/RouteProgress.tsx). */
+@keyframes yl-route-progress {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  60% {
+    transform: translateX(-10%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+.yl-route-progress {
+  animation: yl-route-progress 1.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yl-route-progress {
+    animation: none;
+  }
+}
+
+/* --- Auth background: dense diagonal quote lanes --- */
+@keyframes yl-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-33.3333%, 0, 0);
+  }
+}
+
+.yl-marquee {
+  animation: yl-marquee var(--yl-dur, 60s) linear infinite;
+  animation-delay: var(--yl-delay, 0s);
+  will-change: transform;
+}
+
+.yl-marquee-rev {
+  animation: yl-marquee var(--yl-dur, 60s) linear infinite reverse;
+  animation-delay: var(--yl-delay, 0s);
+  will-change: transform;
+}
+
+.yl-tilted {
+  transform: rotate(-15deg) scale(1.7);
+}
+
+/* --- MapLibre polish: rounded controls, neutral accents --- */
+.maplibregl-map {
+  font-family: inherit;
+  background: #eef1f5;
+}
+.maplibregl-ctrl-group {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.16);
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid #e4e4e7;
+}
+.maplibregl-ctrl-group button:hover {
+  background-color: #fafafa;
+}
+.maplibregl-popup-content {
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  font-family: inherit;
+}
+.maplibregl-popup a {
+  color: #dc2626;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yl-marquee,
+  .yl-marquee-rev {
+    animation: none !important;
+  }
+}
