@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import type { ReactNode } from "react";
-import { PageHeader } from "@adem.rejeb/ui";
+import { Flex, PageHeader } from "@adem.rejeb/ui";
 
 const TABS = [
   { href: "/admin", label: "Vue d'ensemble" },
@@ -38,9 +38,12 @@ export default function AdminShell({
         actions={actions}
       />
 
-      <nav
+      <Flex
+        as="nav"
         aria-label="Sections d'administration"
-        className="mt-8 flex flex-wrap gap-1.5 rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-sm"
+        wrap
+        gap={1.5}
+        className="mt-8 rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-sm"
       >
         {TABS.map((tab) => {
           const active =
@@ -63,7 +66,7 @@ export default function AdminShell({
             </Link>
           );
         })}
-      </nav>
+      </Flex>
 
       <div className="mt-8">{children}</div>
     </div>

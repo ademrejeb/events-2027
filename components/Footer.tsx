@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Flex } from "@adem.rejeb/ui";
 import { Logo } from "./Logo";
 import FooterSocial from "./FooterSocial";
 
@@ -46,7 +47,7 @@ export default function Footer() {
               Rejoignez des milliers de bénévoles et d&rsquo;organisations en Tunisie.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3">
+          <Flex wrap justify="center" gap={3}>
             <Link
               href="/#evenements"
               className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
@@ -59,7 +60,7 @@ export default function Footer() {
             >
               Devenir organisateur
             </Link>
-          </div>
+          </Flex>
         </div>
       </div>
 

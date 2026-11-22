@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Flex,
   Input,
   Modal,
   ModalBody,
@@ -178,8 +179,8 @@ export default function AdminOrganizers({ profile }: { profile: ProfileRow }) {
       description="Gérez les comptes vérifiés : suspension, bannissement et rôles."
     >
       <Stack gap={6}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
+        <Flex wrap align="center" justify="between" gap={3}>
+          <Flex wrap gap={1.5}>
             {FILTERS.map((f) => (
               <Button
                 key={f.id}
@@ -190,7 +191,7 @@ export default function AdminOrganizers({ profile }: { profile: ProfileRow }) {
                 {f.label}
               </Button>
             ))}
-          </div>
+          </Flex>
           <div className="w-full sm:w-64">
             <Input
               placeholder="Rechercher un organisateur"
@@ -198,7 +199,7 @@ export default function AdminOrganizers({ profile }: { profile: ProfileRow }) {
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-        </div>
+        </Flex>
 
         {error && <Alert variant="danger">{error}</Alert>}
 

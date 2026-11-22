@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   EmptyState,
+  Flex,
   Select,
   Skeleton,
   Stack,
@@ -167,7 +168,7 @@ export default function AdminFeedback({ profile }: { profile: ProfileRow }) {
       }
     >
       <Stack gap={6}>
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrer par statut">
+        <Flex wrap gap={1.5} role="group" aria-label="Filtrer par statut">
           {FILTERS.map((f) => {
             const active = filter === f.id;
             const count = f.id ? counts[f.id] : Object.values(counts).reduce((a, b) => a + b, 0);
@@ -189,7 +190,7 @@ export default function AdminFeedback({ profile }: { profile: ProfileRow }) {
               </button>
             );
           })}
-        </div>
+        </Flex>
 
         {error && <Alert variant="danger">{error}</Alert>}
 

@@ -78,13 +78,15 @@ export default function Nav() {
         <Flex align="center" justify="between" style={{ height: 72 }}>
           <Flex align="center" gap={6}>
             <Logo />
-            <nav className="hidden items-center gap-2 lg:flex" aria-label="Navigation principale">
-              {NAV_LINKS.map((item) => (
-                <Link key={item.href} href={item.href} className={navLink}>
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <div className="hidden lg:block">
+              <Flex as="nav" align="center" gap={2} aria-label="Navigation principale">
+                {NAV_LINKS.map((item) => (
+                  <Link key={item.href} href={item.href} className={navLink}>
+                    {item.label}
+                  </Link>
+                ))}
+              </Flex>
+            </div>
           </Flex>
 
           <Flex align="center" gap={3}>

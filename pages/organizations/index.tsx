@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Layout from "@/components/Layout";
-import { Badge, Button, Card, EmptyState, Input, Skeleton, Stack } from "@adem.rejeb/ui";
+import { Badge, Button, Card, EmptyState, Flex, Input, Skeleton, Stack } from "@adem.rejeb/ui";
 
 type Org = {
   id: string;
@@ -66,7 +66,7 @@ export default function OrganizationsDirectory() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <Flex wrap align="center" gap={3}>
             <div className="w-full sm:w-80">
               <Input
                 placeholder="Rechercher une organisation"
@@ -74,7 +74,7 @@ export default function OrganizationsDirectory() {
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <Flex wrap gap={2}>
               {TYPES.map((t) => (
                 <Button
                   key={t.id}
@@ -85,8 +85,8 @@ export default function OrganizationsDirectory() {
                   {t.label}
                 </Button>
               ))}
-            </div>
-          </div>
+            </Flex>
+          </Flex>
 
           {error && (
             <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -114,17 +114,17 @@ export default function OrganizationsDirectory() {
               {orgs.map((org) => (
                 <Link key={org.id} href={`/organizations/${org.id}`}>
                   <Card interactive>
-                    <div className="flex items-start gap-4">
+                    <Flex align="start" gap={4}>
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-xl font-extrabold text-white">
                         {org.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <Flex align="center" gap={2}>
                           <h2 className="truncate font-semibold text-zinc-900">
                             {org.name}
                           </h2>
                           {org.verified && <Badge variant="info">✓</Badge>}
-                        </div>
+                        </Flex>
                         <p className="mt-1 text-xs capitalize text-zinc-500">
                           {org.type}
                           {org.city ? ` · ${org.city}` : ""}
@@ -135,7 +135,7 @@ export default function OrganizationsDirectory() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Flex>
                   </Card>
                 </Link>
               ))}

@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Flex,
   Input,
   Modal,
   ModalBody,
@@ -132,8 +133,8 @@ export default function AdminApplications() {
       description="Examinez les demandes et accordez ou refusez l'accès à la plateforme."
     >
       <Stack gap={6}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
+        <Flex wrap align="center" justify="between" gap={3}>
+          <Flex wrap gap={1.5}>
             {FILTERS.map((f) => (
               <Button
                 key={f.id}
@@ -144,7 +145,7 @@ export default function AdminApplications() {
                 {f.label}
               </Button>
             ))}
-          </div>
+          </Flex>
           <div className="w-full sm:w-64">
             <Input
               placeholder="Rechercher (nom, e-mail, ville)"
@@ -152,7 +153,7 @@ export default function AdminApplications() {
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-        </div>
+        </Flex>
 
         {error && <Alert variant="danger">{error}</Alert>}
 
