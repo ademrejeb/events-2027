@@ -97,27 +97,6 @@ dialog {
   margin: auto;
 }
 
-/*
- * Buttons in the design system are deliberately compact. At 100 % zoom they
- * read fine, but at 125–150 % (or on a laptop) the 30 px height and 12 px
- * horizontal padding look squeezed. Give the event app a slightly airier
- * rhythm without forking the library.
- */
-.ui-button--sm {
-  height: 2.125rem;
-  padding-inline: 1rem;
-}
-
-.ui-button--md {
-  height: 2.5rem;
-  padding-inline: 1.15rem;
-}
-
-.ui-button--lg {
-  height: 2.75rem;
-  padding-inline: 1.5rem;
-}
-
 /* Long public links must never widen a card or create horizontal scroll. */
 .link-safe {
   min-width: 0;

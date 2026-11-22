@@ -17,7 +17,7 @@
     "db:hosted-env": "node scripts/use-hosted-supabase.mjs"
   },
   "dependencies": {
-    "@adem.rejeb/ui": "^0.1.0",
+    "@adem.rejeb/ui": "file:vendor/adem.rejeb-ui-0.1.1.tgz",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "cookie": "^1.1.1",
