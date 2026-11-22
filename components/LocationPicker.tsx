@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { Marker as MLMarker } from "maplibre-gl";
-import { createLocationPin, loadMapLibre, MAP_STYLE } from "@/lib/maplibre";
+import type { Map as MLMap, Marker as MLMarker } from "maplibre-gl";
+import {
+  createLocationPin,
+  enhancePlaceLabels,
+  loadMapLibre,
+  MAP_STYLE_URL,
+  watchStyleFallback,
+} from "@/lib/maplibre";
 
 type GeoResult = {
   display_name: string;
@@ -38,7 +44,7 @@ export default function LocationPicker({
   onChange: (lat: string, lng: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<import("maplibre-gl").Map | null>(null);
+  const mapRef = useRef<MLMap | null>(null);
   const markerRef = useRef<MLMarker | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -83,8 +89,9 @@ export default function LocationPicker({
 
   useEffect(() => {
     let cancelled = false;
-    let map: import("maplibre-gl").Map | null = null;
+    let map: MLMap | null = null;
     let marker: MLMarker | null = null;
+    let cancelWatch: (() => void) | null = null;
 
     (async () => {
       const ml = await loadMapLibre();
@@ -93,7 +100,7 @@ export default function LocationPicker({
       const start = initialPosition.current;
       map = new ml.Map({
         container: containerRef.current,
-        style: MAP_STYLE,
+        style: MAP_STYLE_URL,
         center: start ? [start[1], start[0]] : [10.1815, 36.8065],
         zoom: start ? 16 : 6,
         minZoom: 5,
@@ -105,6 +112,7 @@ export default function LocationPicker({
       });
       mapRef.current = map;
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
+      cancelWatch = watchStyleFallback(map);
 
       marker = new ml.Marker({
         element: createLocationPin(),
@@ -126,12 +134,15 @@ export default function LocationPicker({
       });
 
       map.on("load", () => {
-        if (!cancelled) setReady(true);
+        if (cancelled || !map) return;
+        enhancePlaceLabels(map);
+        setReady(true);
       });
     })();
 
     return () => {
       cancelled = true;
+      cancelWatch?.();
       marker?.remove();
       map?.remove();
       mapRef.current = null;

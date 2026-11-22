@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { timedFetch } from "./timed-fetch";
 
 let cached: SupabaseClient<Database> | null = null;
 
@@ -18,6 +19,7 @@ export function adminClient(): SupabaseClient<Database> {
   }
   cached = createClient<Database>(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: timedFetch },
   });
   return cached;
 }

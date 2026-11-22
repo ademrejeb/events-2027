@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import EventCard, { type EventListItem } from "./EventCard";
 
 type DateFilter = "upcoming" | "7" | "30" | "all";
@@ -43,9 +43,17 @@ export default function ActionsExplorer({
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const onQueryChange = setQuery;
 
-  useEffect(() => {
+  // Back to the first page of cards whenever the filters or the loaded data
+  // change. Compared during render so the list is never painted with a stale
+  // window (an effect would paint first, then re-render).
+  const filterKey = `${query}|${category ?? ""}|${dateFilter}|${sort}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  const [lastEvents, setLastEvents] = useState(events);
+  if (lastFilterKey !== filterKey || lastEvents !== events) {
+    setLastFilterKey(filterKey);
+    setLastEvents(events);
     setVisible(INITIAL_VISIBLE);
-  }, [query, category, dateFilter, sort, events]);
+  }
 
   const categories = useMemo(() => {
     const seen = new Map<string, string>();

@@ -21,10 +21,14 @@ export default function Nav() {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Close the menus on navigation. Comparing against the previous path during
+  // render (instead of an effect) avoids a second cascading render pass.
+  const [lastPath, setLastPath] = useState(router.asPath);
+  if (lastPath !== router.asPath) {
+    setLastPath(router.asPath);
     setMenuOpen(false);
     setAccountOpen(false);
-  }, [router.asPath]);
+  }
 
   useEffect(() => {
     if (!menuOpen && !accountOpen) return;

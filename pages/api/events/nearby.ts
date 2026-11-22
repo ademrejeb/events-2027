@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { internalError } from "@/lib/api-error";
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,7 +29,13 @@ export default async function handler(
   });
 
   if (error) {
-    return res.status(500).json({ error: error.message });
+    internalError(
+      req,
+      res,
+      "La recherche à proximité est momentanément indisponible.",
+      error,
+    );
+    return;
   }
 
   return res.status(200).json({ results: data ?? [] });

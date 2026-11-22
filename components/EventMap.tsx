@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { GeoJSONSource, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
-import { loadMapLibre, MAP_STYLE } from "@/lib/maplibre";
+import type { GeoJSONSource, Map as MLMap, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
+import { loadMapLibre, enhancePlaceLabels, watchStyleFallback, MAP_STYLE_URL } from "@/lib/maplibre";
 import { EVENT_CATEGORY_STYLES, FALLBACK_CATEGORY_STYLE, eventCategoryStyle } from "@/lib/event-style";
 
 type MapEvent = {
@@ -17,7 +17,7 @@ type MapEvent = {
 const SOURCE_ID = "yl-actions";
 const POINT_LAYER = "yl-points";
 
-function ensureCategoryImages(map: import("maplibre-gl").Map) {
+function ensureCategoryImages(map: MLMap) {
   const styles = [...Object.values(EVENT_CATEGORY_STYLES), FALLBACK_CATEGORY_STYLE];
   for (const style of styles) {
     const imageId = `yl-cat-${style.slug}`;
@@ -113,7 +113,7 @@ export default function EventMap({
   ariaLabel?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<import("maplibre-gl").Map | null>(null);
+  const mapRef = useRef<MLMap | null>(null);
   const libRef = useRef<Awaited<ReturnType<typeof loadMapLibre>> | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -155,7 +155,8 @@ export default function EventMap({
 
   useEffect(() => {
     let cancelled = false;
-    let map: import("maplibre-gl").Map | null = null;
+    let map: MLMap | null = null;
+    let cancelWatch: (() => void) | null = null;
 
     (async () => {
       const ml = await loadMapLibre();
@@ -163,7 +164,7 @@ export default function EventMap({
       libRef.current = ml;
       map = new ml.Map({
         container: containerRef.current,
-        style: MAP_STYLE,
+        style: MAP_STYLE_URL,
         center: [initialView.current.lng, initialView.current.lat],
         zoom: initialView.current.zoom,
         minZoom: 5,
@@ -175,15 +176,18 @@ export default function EventMap({
       });
       mapRef.current = map;
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
+      cancelWatch = watchStyleFallback(map);
       map.on("load", () => {
-        if (cancelled) return;
-        map?.resize();
+        if (cancelled || !map) return;
+        enhancePlaceLabels(map);
+        map.resize();
         setReady(true);
       });
     })();
 
     return () => {
       cancelled = true;
+      cancelWatch?.();
       map?.remove();
       mapRef.current = null;
       libRef.current = null;

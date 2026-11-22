@@ -18,9 +18,10 @@ const EMPTY: ContactValues = {
 };
 
 /**
- * Contact block shown on the organization's public page. Facebook/Instagram
- * links are only rendered publicly when their page metadata can be resolved,
- * so an unreachable profile never becomes a bare URL.
+ * Contact block shown on the organization's public page and on its actions:
+ * e-mail, phone, website and the Facebook / Instagram profiles or pages.
+ * Where the network allows it, the public page name and logo are fetched and
+ * shown on top of the link.
  */
 export default function OrgContactForm({ orgId }: { orgId: string }) {
   const [values, setValues] = useState<ContactValues>(EMPTY);
@@ -128,7 +129,7 @@ export default function OrgContactForm({ orgId }: { orgId: string }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 label="Page Facebook"
-                description="Affichée si le nom et le logo de la page sont récupérables."
+                description="Le lien est toujours affiché ; nom et logo de la page s’y ajoutent quand le réseau les expose."
                 optional
               >
                 <Input
@@ -141,7 +142,7 @@ export default function OrgContactForm({ orgId }: { orgId: string }) {
               </FormField>
               <FormField
                 label="Profil Instagram"
-                description="Affiché uniquement si son aperçu est récupérable."
+                description="Le lien est toujours affiché ; le nom du compte s’y ajoute quand Instagram l’expose."
                 optional
               >
                 <Input

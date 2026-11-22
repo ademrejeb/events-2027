@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getAuthUser } from "@/lib/supabase/api";
+import { internalError } from "@/lib/api-error";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,7 +18,13 @@ export default async function handler(
     .order("name");
 
   if (error) {
-    return res.status(500).json({ error: error.message });
+    internalError(
+      req,
+      res,
+      "Les catégories sont momentanément indisponibles.",
+      error,
+    );
+    return;
   }
 
   return res.status(200).json({ categories: data });

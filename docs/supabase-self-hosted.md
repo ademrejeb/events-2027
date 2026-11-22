@@ -95,6 +95,20 @@ TRUST_PROXY=1
 
 `TRUST_PROXY=1` only when the app is behind Caddy/Nginx/Render.
 
+On a development machine the same switch is scripted:
+
+| command | effect |
+| --- | --- |
+| `npm run db:local-env` | `.env.local` -> local stack; the remote file is kept in `.env.local.before-local` |
+| `npm run db:hosted-env` | `.env.local` -> whatever `.env.local.before-local` holds (remote) |
+
+Before the first switch, make sure `.env.local.before-local` really contains
+the remote configuration: `db:local-env` never overwrites that backup with
+local values, so if it is stale, copy the four variables in by hand.
+
+Optional: `SUPABASE_TIMEOUT_MS` (default `8000`) bounds how long a request
+waits for Supabase before answering a clean "unavailable" error.
+
 Verify after the switch:
 
 - organizer login works;

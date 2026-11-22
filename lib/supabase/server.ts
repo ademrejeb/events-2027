@@ -2,12 +2,14 @@
 import { serialize } from "cookie";
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { Database } from "./types";
+import { timedFetch } from "./timed-fetch";
 
 export function createClient(req: NextApiRequest, res: NextApiResponse) {
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
     {
+      global: { fetch: timedFetch },
       cookies: {
         getAll() {
           return Object.entries(req.cookies)

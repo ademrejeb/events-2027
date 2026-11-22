@@ -4,6 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { getEventCounts } from "@/lib/event-counts";
 import { sanitizeUrlList, oneOf } from "@/lib/validation";
 import { withApiLog } from "@/lib/api-log";
+import { internalError } from "@/lib/api-error";
 
 const DEFAULT_LIMIT = 9;
 const MAX_LIMIT = 100;
@@ -62,7 +63,13 @@ async function listEvents(req: NextApiRequest, res: NextApiResponse) {
   const { data, error, count } = await query;
 
   if (error) {
-    return res.status(500).json({ error: error.message });
+    internalError(
+      req,
+      res,
+      "Les actions sont momentanément indisponibles.",
+      error,
+    );
+    return;
   }
 
   let events = data ?? [];
@@ -218,7 +225,14 @@ async function createEvent(req: NextApiRequest, res: NextApiResponse) {
     .single();
 
   if (error) {
-    return res.status(400).json({ error: error.message });
+    internalError(
+      req,
+      res,
+      "Enregistrement impossible. Vérifiez les informations puis réessayez.",
+      error,
+      400,
+    );
+    return;
   }
 
   return res.status(201).json({ event: data });

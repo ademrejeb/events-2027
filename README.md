@@ -21,14 +21,16 @@ npm run dev
 `supabase start` applies every migration from `supabase/migrations/` and then
 runs both `seed.sql` (demo accounts) and `seed-large.sql` (synthetic load-test
 data). `npm run db:local-env` writes the local API URL and keys into
-`.env.local` and backs up the previous file. The local Studio is at
-`http://127.0.0.1:54323`.
+`.env.local` and keeps the previous (remote) file in
+`.env.local.before-local`. `npm run db:hosted-env` switches back. The local
+Studio is at `http://127.0.0.1:54323`.
 
 Useful commands:
 
 ```bash
-npm run db:reset   # wipe + replay migrations + both seeds
-npm run db:stop    # stop containers, keep data
+npm run db:reset      # wipe + replay migrations + both seeds
+npm run db:stop       # stop containers, keep data
+npm run db:hosted-env # .env.local back to the remote project
 npx supabase status -o env
 ```
 

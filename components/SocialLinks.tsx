@@ -15,11 +15,23 @@ const BADGE: Record<Platform, string> = {
   instagram: "bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]",
 };
 
+/** Handle from a profile/page URL (`facebook.com/association` -> `association`). */
+function handle(url: string): string | null {
+  try {
+    const parts = new URL(url).pathname.split("/").filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (!last || last === "p" || last === "reel" || /^\d+$/.test(last)) return null;
+    return decodeURIComponent(last).replace(/^@/, "");
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Facebook/Instagram cards resolved server-side from the public page's Open
- * Graph metadata. If the page cannot be resolved (Instagram blocks anonymous
- * HTML) the link is not shown at all — a bare URL with no name/avatar adds
- * noise, so we only render real previews.
+ * Facebook/Instagram contact cards. The page name and logo are fetched from
+ * the public Open Graph metadata (best effort — Facebook often refuses a
+ * datacenter IP); the link itself is a contact detail, so it always stays
+ * visible and falls back to the handle from its URL.
  */
 export default function SocialLinks({
   facebook,
@@ -45,7 +57,7 @@ export default function SocialLinks({
               signal: controller.signal,
               cache: "no-store",
             });
-            const data = res.ok ? await res.json() : { preview: null };
+            const data: { preview?: Preview | null } = res.ok ? await res.json() : { preview: null };
             const preview: Preview | null = data.preview ?? null;
             cache.set(url, preview);
             return [url, preview] as const;
@@ -64,16 +76,17 @@ export default function SocialLinks({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facebook, instagram]);
 
-  const resolvable = urls
-    .map((url) => [url, previews[url]] as const)
-    .filter((entry): entry is readonly [string, Preview] => !!entry[1]?.name || !!entry[1]?.image);
-
-  if (resolvable.length === 0) return null;
+  if (urls.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      {resolvable.map(([url, preview]) => {
+      {urls.map((url) => {
         const platform: Platform = url.includes("instagram.com") ? "instagram" : "facebook";
+        const preview = previews[url] ?? null;
+        // Contact info must never disappear because metadata failed: the
+        // handle from the URL is the fallback label, and the fetched
+        // name/logo is only an upgrade on top of it.
+        const label = preview?.name ?? handle(url) ?? LABEL[platform];
         return (
           <a
             key={url}
@@ -82,7 +95,7 @@ export default function SocialLinks({
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-2.5 transition hover:border-red-200 hover:shadow-sm"
           >
-            {preview.image ? (
+            {preview?.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={preview.image}
@@ -98,9 +111,7 @@ export default function SocialLinks({
               </span>
             )}
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-zinc-900">
-                {preview.name ?? LABEL[platform]}
-              </span>
+              <span className="block truncate text-sm font-semibold text-zinc-900">{label}</span>
               <span className="block text-xs text-zinc-500">{LABEL[platform]}</span>
             </span>
           </a>
