@@ -2,9 +2,11 @@
 -- Multiple before/after photos per event, and public contact
 -- channels (phone, email, website, Facebook, Instagram).
 --
--- Run this migration BEFORE deploying the code that uses the
--- new columns; the old single-image columns are folded into the
--- arrays and then removed. Safe to re-run.
+-- Additive only: the legacy single-image columns are copied into
+-- the new arrays but kept, so the currently deployed build keeps
+-- working while the new build rolls out. Drop them in a later
+-- migration once the new code is live.
+-- Safe to re-run.
 -- ============================================================
 
 alter table public.events
@@ -28,10 +30,6 @@ begin
        set after_images = array[after_image_url]
      where after_image_url is not null
        and cardinality(after_images) = 0;
-
-    alter table public.events
-      drop column if exists before_image_url,
-      drop column if exists after_image_url;
   end if;
 end $$;
 
