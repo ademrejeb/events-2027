@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import ImageUpload from "@/components/ImageUpload";
+import PhotoGalleryUpload from "@/components/PhotoGalleryUpload";
 import {
   Alert,
   Button,
@@ -30,10 +31,10 @@ export type EventFormValues = {
   start_at: string;
   end_at: string;
   max_volunteers: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "cancelled" | "completed";
   image_url: string | null;
-  before_image_url: string | null;
-  after_image_url: string | null;
+  before_images: string[];
+  after_images: string[];
   locations: { label: string; lat: number; lng: number }[];
   lat: string;
   lng: string;
@@ -51,8 +52,8 @@ export const emptyEventForm: EventFormValues = {
   max_volunteers: "",
   status: "published",
   image_url: null,
-  before_image_url: null,
-  after_image_url: null,
+  before_images: [],
+  after_images: [],
   locations: [],
   lat: "",
   lng: "",
@@ -425,30 +426,30 @@ export default function EventForm({
                   label="Ajouter une photo de couverture"
                 />
               </Stack>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Stack gap={2}>
-                  <Text size="sm" weight="medium">
-                    Photo avant l&rsquo;action
-                  </Text>
-                  <ImageUpload
-                    bucket="event-images"
-                    currentUrl={values.before_image_url}
-                    onUpload={(u) => set("before_image_url", u)}
-                    label="Ajouter une photo avant"
-                  />
-                </Stack>
-                <Stack gap={2}>
-                  <Text size="sm" weight="medium">
-                    Photo après l&rsquo;action
-                  </Text>
-                  <ImageUpload
-                    bucket="event-images"
-                    currentUrl={values.after_image_url}
-                    onUpload={(u) => set("after_image_url", u)}
-                    label="Ajouter une photo après"
-                  />
-                </Stack>
-              </div>
+              <Stack gap={2}>
+                <Text size="sm" weight="medium">
+                  Photos avant l&rsquo;action
+                </Text>
+                <PhotoGalleryUpload
+                  bucket="event-images"
+                  value={values.before_images}
+                  onChange={(urls) => set("before_images", urls)}
+                  label="Ajouter des photos avant"
+                  hint="Préparez l’action : lieu, matériel, équipe. Vous pouvez en ajouter à tout moment."
+                />
+              </Stack>
+              <Stack gap={2}>
+                <Text size="sm" weight="medium">
+                  Photos après l&rsquo;action
+                </Text>
+                <PhotoGalleryUpload
+                  bucket="event-images"
+                  value={values.after_images}
+                  onChange={(urls) => set("after_images", urls)}
+                  label="Ajouter des photos après"
+                  hint="Elles sont publiées sur la page une fois la date de fin passée. Vous pouvez les ajouter pendant et après l’action."
+                />
+              </Stack>
             </Stack>
           </Card.Body>
         </Card>
@@ -464,11 +465,20 @@ export default function EventForm({
             <SegmentedControl
               label="Statut de publication"
               value={values.status}
-              onValueChange={(v) => set("status", v as "draft" | "published")}
-              options={[
-                { value: "draft", label: "Brouillon" },
-                { value: "published", label: "Publiée" },
-              ]}
+              onValueChange={(v) => set("status", v as EventFormValues["status"])}
+              options={
+                mode === "edit"
+                  ? [
+                      { value: "draft", label: "Brouillon" },
+                      { value: "published", label: "Publiée" },
+                      { value: "completed", label: "Terminée" },
+                      { value: "cancelled", label: "Annulée" },
+                    ]
+                  : [
+                      { value: "draft", label: "Brouillon" },
+                      { value: "published", label: "Publiée" },
+                    ]
+              }
             />
           </Card.Body>
         </Card>

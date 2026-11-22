@@ -100,6 +100,8 @@ export type Database = {
           public_email: string | null;
           public_phone: string | null;
           website: string | null;
+          facebook_url: string | null;
+          instagram_url: string | null;
           updated_at: string;
           rib_holder: string | null;
           bank_name: string | null;
@@ -121,6 +123,8 @@ export type Database = {
           public_email?: string | null;
           public_phone?: string | null;
           website?: string | null;
+          facebook_url?: string | null;
+          instagram_url?: string | null;
           updated_at?: string;
           rib_holder?: string | null;
           bank_name?: string | null;
@@ -142,6 +146,8 @@ export type Database = {
           public_email?: string | null;
           public_phone?: string | null;
           website?: string | null;
+          facebook_url?: string | null;
+          instagram_url?: string | null;
           updated_at?: string;
           rib_holder?: string | null;
           bank_name?: string | null;
@@ -228,8 +234,8 @@ export type Database = {
           max_volunteers: number | null;
           status: "draft" | "published" | "cancelled" | "completed";
           image_url: string | null;
-          before_image_url: string | null;
-          after_image_url: string | null;
+          before_images: string[];
+          after_images: string[];
           gallery_urls: string[] | null;
           locations: { label?: string; lat: number; lng: number }[];
           lat: number | null;
@@ -250,8 +256,8 @@ export type Database = {
           max_volunteers?: number | null;
           status?: "draft" | "published" | "cancelled" | "completed";
           image_url?: string | null;
-          before_image_url?: string | null;
-          after_image_url?: string | null;
+          before_images?: string[];
+          after_images?: string[];
           gallery_urls?: string[] | null;
           locations?: { label?: string; lat: number; lng: number }[];
           lat?: number | null;
@@ -272,8 +278,8 @@ export type Database = {
           max_volunteers?: number | null;
           status?: "draft" | "published" | "cancelled" | "completed";
           image_url?: string | null;
-          before_image_url?: string | null;
-          after_image_url?: string | null;
+          before_images?: string[];
+          after_images?: string[];
           gallery_urls?: string[] | null;
           locations?: { label?: string; lat: number; lng: number }[];
           lat?: number | null;

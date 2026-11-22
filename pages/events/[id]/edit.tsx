@@ -22,8 +22,8 @@ type ApiEvent = {
   max_volunteers: number | null;
   status: string;
   image_url: string | null;
-  before_image_url?: string | null;
-  after_image_url?: string | null;
+  before_images?: string[] | null;
+  after_images?: string[] | null;
   lat?: number | null;
   lng?: number | null;
   locations?: { label?: string; lat: number; lng: number }[] | null;
@@ -88,10 +88,14 @@ export default function EditEvent() {
           start_at: toLocalInput(ev.start_at),
           end_at: toLocalInput(ev.end_at),
           max_volunteers: ev.max_volunteers ? String(ev.max_volunteers) : "",
-          status: ev.status === "published" ? "published" : "draft",
+          status: (
+            ["draft", "published", "cancelled", "completed"].includes(ev.status)
+              ? ev.status
+              : "draft"
+          ) as EventFormValues["status"],
           image_url: ev.image_url,
-          before_image_url: ev.before_image_url ?? null,
-          after_image_url: ev.after_image_url ?? null,
+          before_images: ev.before_images ?? [],
+          after_images: ev.after_images ?? [],
           locations: (ev.locations ?? []).map((l, i) => ({
             label: l.label ?? `Lieu ${i + 1}`,
             lat: l.lat,
@@ -142,8 +146,8 @@ export default function EditEvent() {
           max_volunteers: values.max_volunteers ? Number(values.max_volunteers) : null,
           status: values.status,
           image_url: values.image_url,
-          before_image_url: values.before_image_url,
-          after_image_url: values.after_image_url,
+          before_images: values.before_images,
+          after_images: values.after_images,
           locations: values.locations,
           lat: values.lat ? Number(values.lat) : null,
           lng: values.lng ? Number(values.lng) : null,

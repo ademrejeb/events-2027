@@ -84,3 +84,47 @@ export function sanitizeText(value: unknown, max = 5000): string | null {
   if (s === null) return null;
   return s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").slice(0, max);
 }
+
+/** Absolute http(s) URL, or a root-relative app path. */
+export function sanitizeUrl(value: unknown, max = 2048): string | null {
+  const s = sanitizeText(value, max)?.trim();
+  if (!s) return null;
+  if (s.startsWith("/") && !s.startsWith("//")) return s;
+  try {
+    const url = new URL(s);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Deduplicated, bounded list of image URLs from an untrusted payload. */
+export function sanitizeUrlList(value: unknown, max = 12): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  for (const item of value) {
+    const url = sanitizeUrl(item);
+    if (url && !out.includes(url)) out.push(url);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/** Accepts only the given hostnames (and their `www.` form). */
+export function sanitizeHostedUrl(
+  value: unknown,
+  hosts: readonly string[],
+  max = 2048,
+): string | null {
+  const url = sanitizeUrl(value, max);
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    if (!hosts.includes(host)) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}

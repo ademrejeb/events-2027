@@ -3,7 +3,7 @@ import { getAuthUser } from "@/lib/supabase/api";
 import { getAuthContext, isAdmin, canManageEvent } from "@/lib/authz";
 import { adminClient } from "@/lib/supabase/admin";
 import { getEventCounts } from "@/lib/event-counts";
-import { sanitizeText, clampInt, validDate, isUuid, oneOf } from "@/lib/validation";
+import { sanitizeText, sanitizeUrlList, clampInt, validDate, isUuid, oneOf } from "@/lib/validation";
 import { withApiLog } from "@/lib/api-log";
 import type { Database } from "@/lib/supabase/types";
 
@@ -34,7 +34,7 @@ async function getEvent(req: NextApiRequest, res: NextApiResponse, id: string) {
   const { supabase } = await getAuthUser(req, res);
 
   const columns =
-    "id, org_id, title, description, category_id, location, city, locations, start_at, end_at, max_volunteers, status, created_at, image_url, lat, lng, gallery_urls, before_image_url, after_image_url, organizations(id, name, type, verified, status), event_categories(name, slug)";
+    "id, org_id, title, description, category_id, location, city, locations, start_at, end_at, max_volunteers, status, created_at, image_url, lat, lng, gallery_urls, before_images, after_images, organizations(id, name, type, verified, status, public_email, public_phone, website, facebook_url, instagram_url), event_categories(name, slug)";
 
   const { data, error } = await supabase
     .from("events")
@@ -153,12 +153,8 @@ async function updateEvent(
     updates.status = status;
   }
   if ("image_url" in body) updates.image_url = sanitizeText(body.image_url, 2048) || null;
-  if ("before_image_url" in body) {
-    updates.before_image_url = sanitizeText(body.before_image_url, 2048) || null;
-  }
-  if ("after_image_url" in body) {
-    updates.after_image_url = sanitizeText(body.after_image_url, 2048) || null;
-  }
+  if ("before_images" in body) updates.before_images = sanitizeUrlList(body.before_images);
+  if ("after_images" in body) updates.after_images = sanitizeUrlList(body.after_images);
   if ("lat" in body) {
     const n = typeof body.lat === "number" ? body.lat : Number(body.lat);
     updates.lat = Number.isFinite(n) && n >= -90 && n <= 90 ? n : null;

@@ -1,18 +1,33 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { adminClient } from "@/lib/supabase/admin";
 import { getEventCounts } from "@/lib/event-counts";
-import { isUuid, queryId } from "@/lib/validation";
+import { getAuthContext, isAccountActive, isAdmin, isOrgMember } from "@/lib/authz";
+import {
+  isUuid,
+  queryId,
+  sanitizeHostedUrl,
+  sanitizeText,
+  sanitizeUrl,
+  isEmail,
+  normalizePhone,
+  isValidPhone,
+} from "@/lib/validation";
 import { withApiLog } from "@/lib/api-log";
+import type { Database } from "@/lib/supabase/types";
+
+type OrgUpdate = Database["public"]["Tables"]["organizations"]["Update"];
 
 const ORG_COLUMNS =
-  "id, name, type, description, city, logo_url, verified, website, public_email, public_phone, rib_holder, bank_name, rib, donation_instructions, donation_url";
+  "id, name, type, description, city, logo_url, verified, website, public_email, public_phone, facebook_url, instagram_url, rib_holder, bank_name, rib, donation_instructions, donation_url";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method === "GET") return getOrganization(req, res);
+  if (req.method === "PATCH") return updateContacts(req, res);
+  res.setHeader("Allow", "GET, PATCH");
+  return res.status(405).json({ error: "Method not allowed" });
+}
 
+async function getOrganization(req: NextApiRequest, res: NextApiResponse) {
   const id = queryId(req.query.id);
   if (!isUuid(id)) {
     return res.status(400).json({ error: "Identifiant d'organisation invalide." });
@@ -64,6 +79,87 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     organization: orgResult.data,
     events: eventsWithCounts,
   });
+}
+
+/**
+ * Organization owners/members edit the public contact block. Only contact
+ * fields are writable here; identity/lifecycle fields stay admin-controlled.
+ */
+async function updateContacts(req: NextApiRequest, res: NextApiResponse) {
+  const id = queryId(req.query.id);
+  if (!isUuid(id)) {
+    return res.status(400).json({ error: "Identifiant d'organisation invalide." });
+  }
+
+  const ctx = await getAuthContext(req, res);
+  if (!ctx.user) return res.status(401).json({ error: "Authentification requise." });
+  if (!isAccountActive(ctx.profile)) {
+    return res.status(403).json({ error: "Compte suspendu ou banni." });
+  }
+  const allowed = isAdmin(ctx.profile) || (await isOrgMember(ctx.user.id, id));
+  if (!allowed) {
+    return res.status(403).json({ error: "Vous ne gérez pas cette organisation." });
+  }
+
+  const body = req.body ?? {};
+  const updates: OrgUpdate = {};
+
+  if ("public_email" in body) {
+    const email = sanitizeText(body.public_email, 160)?.trim() || null;
+    if (email && !isEmail(email)) {
+      return res.status(400).json({ error: "Adresse e-mail invalide." });
+    }
+    updates.public_email = email;
+  }
+  if ("public_phone" in body) {
+    const raw = sanitizeText(body.public_phone, 40)?.trim() || null;
+    if (raw && !isValidPhone(raw)) {
+      return res.status(400).json({ error: "Numéro de téléphone invalide." });
+    }
+    updates.public_phone = raw ? normalizePhone(raw) : null;
+  }
+  if ("website" in body) {
+    const url = sanitizeUrl(body.website);
+    if (body.website && !url) {
+      return res.status(400).json({ error: "Site web invalide." });
+    }
+    updates.website = url;
+  }
+  if ("facebook_url" in body) {
+    const url = sanitizeHostedUrl(body.facebook_url, ["facebook.com"]);
+    if (body.facebook_url && !url) {
+      return res.status(400).json({ error: "Lien Facebook invalide." });
+    }
+    updates.facebook_url = url;
+  }
+  if ("instagram_url" in body) {
+    const url = sanitizeHostedUrl(body.instagram_url, ["instagram.com"]);
+    if (body.instagram_url && !url) {
+      return res.status(400).json({ error: "Lien Instagram invalide." });
+    }
+    updates.instagram_url = url;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "Aucun champ à mettre à jour." });
+  }
+  updates.updated_at = new Date().toISOString();
+
+  const admin = adminClient();
+  const { data, error } = await admin
+    .from("organizations")
+    .update(updates)
+    .eq("id", id)
+    .select(ORG_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    return res.status(400).json({ error: "Mise à jour impossible." });
+  }
+  if (!data) return res.status(404).json({ error: "Organisation introuvable." });
+
+  res.setHeader("Cache-Control", "private, no-store");
+  return res.status(200).json({ organization: data });
 }
 
 export default withApiLog(handler);

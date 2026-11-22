@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Layout from "@/components/Layout";
 import SocialPublisher from "@/components/SocialPublisher";
+import OrgContactForm from "@/components/OrgContactForm";
 import EventRegistrations from "@/components/EventRegistrations";
 import OrganizerEventList from "@/components/OrganizerEventList";
 import { useSession } from "@/lib/session";
@@ -99,6 +100,8 @@ export default function OrgDashboard() {
           <StatCard label="Inscriptions" value={data.total_registrations ?? 0} accent="from-emerald-500 to-green-600" />
           <StatCard label="Membres communauté" value={data.total_volunteers} accent="from-zinc-700 to-zinc-500" />
         </div>
+
+        {typeof id === "string" && <OrgContactForm orgId={id} />}
 
         {typeof id === "string" && <SocialPublisher orgId={id} />}
 

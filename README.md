@@ -39,6 +39,10 @@ rows whose e-mail starts with `loadtest.`.
 
 ## Setup
 
+> Moving the project to your own Supabase instance? See
+> [`docs/supabase-self-hosted.md`](docs/supabase-self-hosted.md) — database,
+> auth users, storage files, env swap and rollback.
+
 ### 1. Create a Supabase project
 
 1. Sign up at [supabase.com](https://supabase.com) → **New project**.

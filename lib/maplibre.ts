@@ -2,17 +2,37 @@ import type { Map as MLMap } from "maplibre-gl";
 
 export const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
-let rtlRegistered = false;
+/**
+ * The OFM Liberty style hides POIs until z15+ (rank 1), z16 (rank 7) and z17
+ * (rank 20). That leaves neighborhood maps (z12–14) with no schools, hospitals,
+ * government offices, mosques or shops — the exact context an event map needs.
+ * Lower the thresholds so each class appears as soon as the map is detailed
+ * enough to place it without clutter.
+ */
+const POI_ZOOMS: [string, number][] = [
+  ["poi_r1", 12],
+  ["poi_r7", 13],
+  ["poi_r20", 14.5],
+];
+
+export function boostMapLabels(map: MLMap) {
+  for (const [layerId, minzoom] of POI_ZOOMS) {
+    if (!map.getLayer(layerId)) continue;
+    try {
+      map.setLayerZoomRange(layerId, minzoom, 24);
+    } catch {
+      /* style revision without this layer — keep the rest working */
+    }
+  }
+}
 
 export async function loadMapLibre() {
-  const mod = await import("maplibre-gl");
-  if (!rtlRegistered) {
-    rtlRegistered = true;
-    mod.setRTLTextPlugin("/maplibre-gl-rtl-text.js", true).catch(() => {
-      rtlRegistered = false;
-    });
-  }
-  return mod;
+  // NOTE: do not register the RTL text plugin here. In the production bundle
+  // the plugin's worker import fails and MapLibre then drops every symbol
+  // layer (all place/road/POI labels) while keeping the vector geometry, which
+  // left the maps unlabeled or blank. OFM tiles already carry `name:nonlatin`
+  // for Arabic, so labels render fine without the plugin.
+  return import("maplibre-gl");
 }
 
 export function collapseAttribution(map: MLMap) {

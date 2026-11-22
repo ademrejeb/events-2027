@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getAuthUser } from "@/lib/supabase/api";
 import { adminClient } from "@/lib/supabase/admin";
 import { getEventCounts } from "@/lib/event-counts";
+import { sanitizeUrlList, oneOf } from "@/lib/validation";
 import { withApiLog } from "@/lib/api-log";
 
 const DEFAULT_LIMIT = 9;
@@ -37,7 +38,7 @@ async function listEvents(req: NextApiRequest, res: NextApiResponse) {
   let query = supabase
     .from("events")
     .select(
-      "*, organizations(name, type, verified), event_categories(name, slug)",
+      "id, org_id, title, description, location, city, start_at, end_at, max_volunteers, status, image_url, lat, lng, created_at, organizations(name, type, verified), event_categories(name, slug)",
       { count: "exact" },
     )
     .eq("status", "published")
@@ -114,8 +115,8 @@ async function createEvent(req: NextApiRequest, res: NextApiResponse) {
     max_volunteers,
     status,
     image_url,
-    before_image_url,
-    after_image_url,
+    before_images,
+    after_images,
     lat,
     lng,
     locations,
@@ -199,7 +200,7 @@ async function createEvent(req: NextApiRequest, res: NextApiResponse) {
     start_at,
     end_at: end_at || null,
     max_volunteers: max_volunteers ?? null,
-    status: status ?? "published",
+    status: oneOf(status, ["draft", "published"] as const) ?? "published",
     image_url: typeof image_url === "string" ? image_url : null,
     lat: typeof lat === "number" ? lat : null,
     lng: typeof lng === "number" ? lng : null,
@@ -207,8 +208,8 @@ async function createEvent(req: NextApiRequest, res: NextApiResponse) {
   // Only include optional columns when used, so the app keeps working even if
   // the corresponding migration has not been applied yet.
   if (safeLocations.length > 0) payload.locations = safeLocations;
-  if (typeof before_image_url === "string" && before_image_url) payload.before_image_url = before_image_url;
-  if (typeof after_image_url === "string" && after_image_url) payload.after_image_url = after_image_url;
+  payload.before_images = sanitizeUrlList(before_images);
+  payload.after_images = sanitizeUrlList(after_images);
 
   const { data, error } = await supabase
     .from("events")

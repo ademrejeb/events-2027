@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "@/components/Layout";
 import EventCard, { type EventListItem } from "@/components/EventCard";
+import SocialLinks from "@/components/SocialLinks";
 import { Button } from "@adem.rejeb/ui";
 
 type Org = {
@@ -11,9 +12,12 @@ type Org = {
   description: string | null;
   city: string | null;
   verified: boolean;
+  logo_url?: string | null;
   website: string | null;
   public_email: string | null;
   public_phone: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
   rib_holder: string | null;
   bank_name: string | null;
   rib: string | null;
@@ -88,6 +92,13 @@ export default function OrgProfile() {
   }
 
   const hasDonation = !!(org.rib || org.donation_url || org.donation_instructions);
+  const hasContact = !!(
+    org.public_email ||
+    org.public_phone ||
+    org.website ||
+    org.facebook_url ||
+    org.instagram_url
+  );
   const initial = org.name.charAt(0).toUpperCase();
 
   return (
@@ -98,8 +109,13 @@ export default function OrgProfile() {
 
       <div className="mx-auto max-w-5xl px-4">
         <div className="-mt-16 flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-3xl border-4 border-white bg-gradient-to-br from-red-500 to-orange-500 text-5xl font-extrabold text-white shadow-lg">
-            {initial}
+          <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-gradient-to-br from-red-500 to-orange-500 text-5xl font-extrabold text-white shadow-lg">
+            {org.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initial
+            )}
           </div>
           <div className="pb-2">
             <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold capitalize text-red-700">
@@ -154,8 +170,50 @@ export default function OrgProfile() {
           </div>
 
           <aside className="lg:col-span-1">
-            {hasDonation ? (
-              <div className="sticky top-24 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="space-y-4 lg:sticky lg:top-24">
+              {hasContact && (
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-semibold text-zinc-900">Contact</h2>
+                  <div className="mt-4 space-y-2">
+                    {org.public_email && (
+                      <a
+                        href={`mailto:${org.public_email}`}
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">✉</span>
+                        <span className="truncate">{org.public_email}</span>
+                      </a>
+                    )}
+                    {org.public_phone && (
+                      <a
+                        href={`tel:${org.public_phone.replace(/[^\d+]/g, "")}`}
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">☎</span>
+                        <span>{org.public_phone}</span>
+                      </a>
+                    )}
+                    {org.website && (
+                      <a
+                        href={org.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">↗</span>
+                        <span className="truncate">{org.website}</span>
+                      </a>
+                    )}
+                    <SocialLinks
+                      facebook={org.facebook_url}
+                      instagram={org.instagram_url}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {hasDonation ? (
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
                     <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
@@ -216,6 +274,7 @@ export default function OrgProfile() {
                 Cette organisation n&rsquo;a pas encore publié d&rsquo;informations de don.
               </div>
             )}
+            </div>
           </aside>
         </div>
       </div>

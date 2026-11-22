@@ -8,7 +8,10 @@ import {
   normalizePhone,
   oneOf,
   queryId,
+  sanitizeHostedUrl,
   sanitizeText,
+  sanitizeUrl,
+  sanitizeUrlList,
   trimmed,
   validDate,
 } from "@/lib/validation";
@@ -118,5 +121,46 @@ describe("isPlainObject", () => {
     expect(isPlainObject([])).toBe(false);
     expect(isPlainObject(null)).toBe(false);
     expect(isPlainObject("x")).toBe(false);
+  });
+});
+
+describe("sanitizeUrl", () => {
+  it("keeps absolute http(s) URLs and root-relative paths", () => {
+    expect(sanitizeUrl("https://example.com/a.png")).toBe("https://example.com/a.png");
+    expect(sanitizeUrl("/uploads/a.png")).toBe("/uploads/a.png");
+  });
+  it("rejects protocol-relative, javascript and malformed values", () => {
+    expect(sanitizeUrl("//evil.example/x")).toBeNull();
+    expect(sanitizeUrl("javascript:alert(1)")).toBeNull();
+    expect(sanitizeUrl("not a url")).toBeNull();
+    expect(sanitizeUrl(42)).toBeNull();
+  });
+});
+
+describe("sanitizeUrlList", () => {
+  it("drops invalid entries and deduplicates", () => {
+    expect(
+      sanitizeUrlList(["https://a.test/1.png", "nope", "https://a.test/1.png", "/x.png"]),
+    ).toEqual(["https://a.test/1.png", "/x.png"]);
+  });
+  it("caps the list and ignores non-arrays", () => {
+    const many = Array.from({ length: 20 }, (_, i) => `https://a.test/${i}.png`);
+    expect(sanitizeUrlList(many)).toHaveLength(12);
+    expect(sanitizeUrlList("https://a.test/1.png")).toEqual([]);
+  });
+});
+
+describe("sanitizeHostedUrl", () => {
+  it("accepts the allowlisted host with or without www", () => {
+    expect(sanitizeHostedUrl("https://facebook.com/org", ["facebook.com"])).toBe(
+      "https://facebook.com/org",
+    );
+    expect(
+      sanitizeHostedUrl("https://www.instagram.com/org/", ["instagram.com"]),
+    ).toBe("https://www.instagram.com/org/");
+  });
+  it("rejects other hosts", () => {
+    expect(sanitizeHostedUrl("https://evil.test/facebook.com", ["facebook.com"])).toBeNull();
+    expect(sanitizeHostedUrl("https://facebook.com.evil.test/x", ["facebook.com"])).toBeNull();
   });
 });

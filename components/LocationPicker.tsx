@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Marker as MLMarker } from "maplibre-gl";
 import {
+  boostMapLabels,
   collapseAttribution,
   createLocationPin,
   loadMapLibre,
@@ -109,6 +110,7 @@ export default function LocationPicker({
         touchPitch: false,
       });
       mapRef.current = map;
+      map.on("style.load", () => boostMapLabels(map!));
       collapseAttribution(map);
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
 

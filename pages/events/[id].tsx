@@ -3,9 +3,11 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Layout from "@/components/Layout";
+import PhotoGallery from "@/components/PhotoGallery";
+import SocialLinks from "@/components/SocialLinks";
 import { useSession } from "@/lib/session";
 import { formatEventDate, formatEventTime } from "@/lib/format";
-import { Alert, Badge, Button, Container, Input, Textarea } from "@adem.rejeb/ui";
+import { Alert, Button, Container, Input, Textarea } from "@adem.rejeb/ui";
 
 const EventMap = dynamic(() => import("@/components/EventMap"), { ssr: false });
 
@@ -14,10 +16,19 @@ type EventDetail = {
   start_at: string; end_at: string | null; max_volunteers: number | null; status: string; image_url: string | null;
   lat: number | null; lng: number | null;
   locations?: { label?: string; lat: number; lng: number }[] | null;
-  before_image_url?: string | null;
-  after_image_url?: string | null;
+  before_images?: string[] | null;
+  after_images?: string[] | null;
   gallery_urls?: string[] | null;
-  organizations: { name: string; type: string; verified: boolean };
+  organizations: {
+    name: string;
+    type: string;
+    verified: boolean;
+    public_email?: string | null;
+    public_phone?: string | null;
+    website?: string | null;
+    facebook_url?: string | null;
+    instagram_url?: string | null;
+  };
   event_categories: { name: string; slug: string };
 };
 type DetailResponse = {
@@ -208,7 +219,16 @@ export default function EventDetailPage() {
   const full =
     event.max_volunteers != null && totalRegistered >= event.max_volunteers;
   const started = now > 0 && new Date(event.start_at).getTime() <= now;
+  const afterVisible =
+    now > 0 && new Date(event.end_at ?? event.start_at).getTime() < now;
   const open = event.status === "published" && !full && !started;
+  const org = event.organizations;
+  const hasOrgContact =
+    !!org.public_email ||
+    !!org.public_phone ||
+    !!org.website ||
+    !!org.facebook_url ||
+    !!org.instagram_url;
   const alreadyRegistered = participated || remembered || !!data.registered;
 
   const points = [
@@ -237,9 +257,9 @@ export default function EventDetailPage() {
         <div className="absolute inset-x-0 bottom-0">
           <div className="mx-auto max-w-6xl px-4 pb-8">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="primary" size="sm">
+              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
                 {event.event_categories.name}
-              </Badge>
+              </span>
               {event.organizations.verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
                   <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 fill-white" aria-hidden="true">
@@ -306,31 +326,43 @@ export default function EventDetailPage() {
               </section>
             )}
 
-            {(event.before_image_url || event.after_image_url) && (
+            {(event.before_images?.length ?? 0) > 0 && (
               <section>
                 <h2 className="mb-3 text-lg font-semibold text-zinc-900">
-                  Avant / Après
+                  Avant l&rsquo;action
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {[
-                    { label: "Avant", url: event.before_image_url, color: "bg-amber-500" },
-                    { label: "Après", url: event.after_image_url, color: "bg-green-600" },
-                  ]
-                    .filter((p) => p.url)
-                    .map((p) => (
-                      <figure key={p.label} className="overflow-hidden rounded-2xl border border-zinc-200">
-                        <div className="relative h-56">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.url as string} alt={p.label} className="h-full w-full object-cover" />
-                          <span className={`absolute left-3 top-3 rounded-full ${p.color} px-3 py-1 text-xs font-semibold text-white`}>
-                            {p.label}
-                          </span>
-                        </div>
-                      </figure>
-                    ))}
-                </div>
+                <PhotoGallery
+                  photos={event.before_images ?? []}
+                  label="Photo avant l'action"
+                />
               </section>
             )}
+
+            {(event.after_images?.length ?? 0) > 0 &&
+              (afterVisible ? (
+                <section>
+                  <h2 className="mb-3 text-lg font-semibold text-zinc-900">
+                    Après l&rsquo;action
+                  </h2>
+                  <PhotoGallery
+                    photos={event.after_images ?? []}
+                    label="Photo après l'action"
+                  />
+                </section>
+              ) : data.can_manage ? (
+                <section>
+                  <h2 className="mb-3 text-lg font-semibold text-zinc-900">
+                    Après l&rsquo;action
+                  </h2>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {(event.after_images?.length ?? 0)} photo
+                    {(event.after_images?.length ?? 0) > 1 ? "s" : ""} déjà prête
+                    {(event.after_images?.length ?? 0) > 1 ? "s" : ""}. Elles seront
+                    publiées automatiquement le{" "}
+                    {formatEventDate(event.end_at ?? event.start_at)}.
+                  </div>
+                </section>
+              ) : null)}
 
             {points.length > 0 && (
               <section>
@@ -406,7 +438,7 @@ export default function EventDetailPage() {
                       Merci ! Votre participation a été enregistrée. Vous ne pouvez
                       participer qu&rsquo;une seule fois à cette action.
                     </div>
-                  ) : (
+                  ) : open ? (
                     <form onSubmit={submitParticipation} className="space-y-3">
                       <p className="text-sm font-medium text-zinc-700">
                         Rejoindre sans compte
@@ -467,6 +499,16 @@ export default function EventDetailPage() {
                         Participer
                       </Button>
                     </form>
+                  ) : started ? (
+                    <p className="text-center text-sm text-zinc-500">
+                      Cette action est terminée.
+                    </p>
+                  ) : full ? (
+                    <p className="text-center text-sm text-zinc-500">Complet</p>
+                  ) : (
+                    <p className="text-center text-sm text-zinc-500">
+                      Inscriptions fermées
+                    </p>
                   )
                 ) : data.joined ? (
                   <Button variant="outline" fullWidth onClick={toggleJoin} loading={busy}>
@@ -497,9 +539,50 @@ export default function EventDetailPage() {
 
               <div className="mt-6 border-t border-zinc-100 pt-4">
                 <p className="text-xs text-zinc-400">Organisé par</p>
-                <p className="text-sm font-semibold text-zinc-800">
+                <Link
+                  href={`/organizations/${event.org_id}`}
+                  className="text-sm font-semibold text-zinc-800 hover:text-red-700"
+                >
                   {event.organizations.name}
-                </p>
+                </Link>
+
+                {hasOrgContact && (
+                  <div className="mt-3 space-y-2">
+                    {org.public_email && (
+                      <a
+                        href={`mailto:${org.public_email}`}
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">✉</span>
+                        <span className="truncate">{org.public_email}</span>
+                      </a>
+                    )}
+                    {org.public_phone && (
+                      <a
+                        href={`tel:${org.public_phone.replace(/[^\d+]/g, "")}`}
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">☎</span>
+                        <span>{org.public_phone}</span>
+                      </a>
+                    )}
+                    {org.website && (
+                      <a
+                        href={org.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                      >
+                        <span className="text-zinc-400">↗</span>
+                        <span className="truncate">{org.website}</span>
+                      </a>
+                    )}
+                    <SocialLinks
+                      facebook={org.facebook_url}
+                      instagram={org.instagram_url}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </aside>

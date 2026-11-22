@@ -7,11 +7,16 @@
 
 alter table public.events
   add column if not exists locations jsonb not null default '[]'::jsonb,
-  add column if not exists before_image_url text,
-  add column if not exists after_image_url text,
+  add column if not exists before_images text[] not null default '{}',
+  add column if not exists after_images text[] not null default '{}',
   add column if not exists gallery_urls text[];
 
 alter table public.organizations
+  add column if not exists public_email text,
+  add column if not exists public_phone text,
+  add column if not exists website text,
+  add column if not exists facebook_url text,
+  add column if not exists instagram_url text,
   add column if not exists rib_holder text,
   add column if not exists bank_name text,
   add column if not exists rib text,

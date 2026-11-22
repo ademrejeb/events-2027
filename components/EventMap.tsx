@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
 import {
+  boostMapLabels,
   collapseAttribution,
   loadMapLibre,
   MAP_STYLE,
@@ -178,6 +179,7 @@ export default function EventMap({
         touchPitch: false,
       });
       mapRef.current = map;
+      map.on("style.load", () => boostMapLabels(map!));
       collapseAttribution(map);
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
       map.on("load", () => {
