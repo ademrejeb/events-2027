@@ -1,16 +1,23 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
 /**
- * Styles that must exist before the external stylesheet is parsed.
+ * First-paint gate.
  *
- * On a cold start the 341 KB CSS chunk is served by the app itself, so it can
- * take seconds to arrive, and Chrome stops render-blocking after ~500 ms: the
- * page then paints with browser defaults (buttons without padding or margins)
- * until the CSS lands. A reload has it cached, which is why it only looked
- * right after a refresh. Instead of painting a broken layout, the app tree is
- * hidden until every stylesheet is really applied, and a branded splash covers
- * the wait. `visibility` (not `display`) keeps layout running, so the map and
- * the fonts settle exactly as they would have.
+ * The production CSS is one ~341 KB chunk served by the app itself. On a cold
+ * free-tier start it can take seconds to arrive, and Chrome stops
+ * render-blocking after ~500 ms, so the page would paint with browser-default
+ * buttons and missing Tailwind spacing until the chunk lands. A refresh has it
+ * cached, which is why it only looked right after a reload.
+ *
+ * The app tree stays hidden behind a branded splash until every stylesheet has
+ * fired `load` — the only reliable "fully parsed and applied" signal. The
+ * previous version gave up after 6 s and revealed the app while the chunk was
+ * still arriving (component styles painted, Tailwind spacing missing); polling
+ * `sheet.cssRules.length` cannot distinguish a streaming sheet from a parsed
+ * one. The 30 s timer here only covers a request that never settles.
+ *
+ * `visibility` (not `display`) keeps layout running, so the map and fonts
+ * settle exactly as they would have.
  */
 const CRITICAL_CSS = `
 @layer theme, base, personal-ui, components, utilities;
@@ -42,26 +49,56 @@ html.styles-ready #boot-splash { display: none; }
 @media (prefers-reduced-motion: reduce) { #boot-splash i { animation-duration: 2s; } }
 `;
 
-/** Reveals the app once every stylesheet has actually been applied. */
+/** Reveals the app once every stylesheet has fired `load`. */
 const READY_SCRIPT = `(function(){
   var root = document.documentElement;
-  function applied(){
-    var links = [].slice.call(document.querySelectorAll('link[rel="stylesheet"]'));
-    if (!links.length) return false;
-    return links.every(function(l){
-      try { return !mediaMatches(l) || !!(l.sheet && l.sheet.cssRules.length); } catch(e){ return true; }
-    });
+  var watched = [];
+  var pending = 0;
+  var revealed = false;
+  function reveal(){
+    if (revealed) return;
+    revealed = true;
+    root.classList.add("styles-ready");
   }
-  function mediaMatches(l){
-    var m = l.media;
-    return !m || !m.mediaText || m.mediaText === 'all' || window.matchMedia(m.mediaText).matches;
+  function check(){
+    if (watched.length > 0 && pending === 0) reveal();
   }
-  function reveal(){ root.classList.add('styles-ready'); }
-  if (applied()) { reveal(); return; }
-  var t0 = Date.now();
-  var iv = setInterval(function(){
-    if (applied() || Date.now() - t0 > 6000) { clearInterval(iv); reveal(); }
-  }, 16);
+  function watch(link){
+    if (watched.indexOf(link) !== -1) return;
+    watched.push(link);
+    pending++;
+    function done(){
+      link.removeEventListener("load", done);
+      link.removeEventListener("error", done);
+      pending--;
+      check();
+    }
+    link.addEventListener("load", done);
+    link.addEventListener("error", done);
+    // A sheet already present after parsing finished loaded before this
+    // observer existed, so its load event will never reach us.
+    if (document.readyState !== "loading" && link.sheet) done();
+  }
+  function scan(){
+    var links = document.getElementsByTagName("link");
+    for (var i = 0; i < links.length; i++) {
+      var rel = " " + (links[i].getAttribute("rel") || "").toLowerCase() + " ";
+      if (rel.indexOf(" stylesheet ") !== -1) watch(links[i]);
+    }
+  }
+  // The parser inserts Next's stylesheet right after this script, so the
+  // observer attaches the load listener before that request can finish.
+  if (window.MutationObserver) {
+    new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  scan();
+  document.addEventListener("DOMContentLoaded", function(){
+    scan();
+    // No external stylesheet (dev inlines its CSS): nothing to wait for.
+    if (watched.length === 0) reveal();
+  });
+  // Never leave a permanent splash if the request hangs forever.
+  setTimeout(reveal, 30000);
 })();`;
 
 export default function Document() {
