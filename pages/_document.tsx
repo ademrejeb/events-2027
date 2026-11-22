@@ -14,7 +14,7 @@ import { Html, Head, Main, NextScript } from "next/document";
  * previous version gave up after 6 s and revealed the app while the chunk was
  * still arriving (component styles painted, Tailwind spacing missing); polling
  * `sheet.cssRules.length` cannot distinguish a streaming sheet from a parsed
- * one. The 30 s timer here only covers a request that never settles.
+ * one. The 60 s timer here only covers a request that never settles.
  *
  * `visibility` (not `display`) keeps layout running, so the map and fonts
  * settle exactly as they would have.
@@ -98,7 +98,7 @@ const READY_SCRIPT = `(function(){
     if (watched.length === 0) reveal();
   });
   // Never leave a permanent splash if the request hangs forever.
-  setTimeout(reveal, 30000);
+  setTimeout(reveal, 60000);
 })();`;
 
 export default function Document() {
