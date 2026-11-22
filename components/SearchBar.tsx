@@ -57,11 +57,11 @@ export default function SearchBar({
           onBlur={() => setFocused(false)}
           aria-label="Rechercher une action solidaire"
           placeholder="Rechercher une action, une ville…"
-          className="w-full rounded-2xl border border-zinc-200 bg-white py-3 pl-11 pr-24 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-colors focus:border-red-500"
+          className="w-full rounded-2xl border border-zinc-200 bg-white py-3 pl-11 pr-28 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-colors focus:border-red-500"
         />
         <button
           type="submit"
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
         >
           Rechercher
         </button>
