@@ -27,6 +27,8 @@ export default function SocialPublisher({ orgId }: { orgId: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<Result[] | null>(null);
+  const [centralResults, setCentralResults] = useState<Result[]>([]);
+  const [centralHashtag, setCentralHashtag] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
 
   async function loadAccounts() {
@@ -100,6 +102,8 @@ export default function SocialPublisher({ orgId }: { orgId: string }) {
     e.preventDefault();
     setPublishError(null);
     setResults(null);
+    setCentralResults([]);
+    setCentralHashtag(null);
     setPublishing(true);
     try {
       const res = await fetch("/api/social/publish", {
@@ -119,6 +123,8 @@ export default function SocialPublisher({ orgId }: { orgId: string }) {
         return;
       }
       setResults(d.results ?? []);
+      setCentralResults(d.central_results ?? []);
+      setCentralHashtag(d.central_hashtag ?? null);
     } catch {
       setPublishError("Une erreur est survenue. Réessayez.");
     } finally {
@@ -139,7 +145,9 @@ export default function SocialPublisher({ orgId }: { orgId: string }) {
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">Réseaux sociaux</h2>
           <p className="text-sm text-zinc-500">
-            Publiez vos actions sur la page Facebook et Instagram de votre organisation.
+            Publiez sur les pages de votre organisation. Chaque publication est
+            aussi repartagée sur la page centrale Yed Lkhir avec un hashtag qui
+            vous identifie.
           </p>
         </div>
       </div>
@@ -259,18 +267,45 @@ export default function SocialPublisher({ orgId }: { orgId: string }) {
           </Button>
 
           {results && (
-            <div className="space-y-2 rounded-2xl bg-zinc-50 p-4">
-              {results.map((r) => (
-                <div key={r.platform} className="flex items-center gap-2 text-sm">
-                  <span className={r.ok ? "text-green-600" : "text-red-600"}>
-                    {r.ok ? "✓" : "✕"}
-                  </span>
-                  <span className="font-medium capitalize">{r.platform}</span>
-                  <span className="text-zinc-500">
-                    {r.ok ? `Publié (id ${r.id ?? "—"})` : r.error}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-3 rounded-2xl bg-zinc-50 p-4">
+              <div className="space-y-2">
+                {results.map((r) => (
+                  <div key={r.platform} className="flex items-center gap-2 text-sm">
+                    <span className={r.ok ? "text-green-600" : "text-red-600"}>
+                      {r.ok ? "✓" : "✕"}
+                    </span>
+                    <span className="font-medium capitalize">{r.platform}</span>
+                    <span className="text-zinc-500">
+                      {r.ok ? `Publié (id ${r.id ?? "—"})` : r.error}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-zinc-200 pt-3">
+                <p className="text-xs font-semibold text-zinc-700">
+                  Repartage page centrale
+                  {centralHashtag ? ` · ${centralHashtag}` : ""}
+                </p>
+                {centralResults.length === 0 ? (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Aucun compte central configuré pour ces réseaux.
+                  </p>
+                ) : (
+                  <div className="mt-1 space-y-1">
+                    {centralResults.map((r) => (
+                      <div key={`central-${r.platform}`} className="flex items-center gap-2 text-xs">
+                        <span className={r.ok ? "text-green-600" : "text-amber-600"}>
+                          {r.ok ? "✓" : "!"}
+                        </span>
+                        <span className="font-medium capitalize">{r.platform}</span>
+                        <span className="text-zinc-500">
+                          {r.ok ? "Repartagé" : r.error}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </form>

@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin/applications", label: "Candidatures" },
   { href: "/admin/organizers", label: "Organisateurs" },
   { href: "/admin/feedback", label: "Signalements" },
+  { href: "/admin/social", label: "Réseaux sociaux" },
   { href: "/admin/audit", label: "Journal d'audit" },
 ];
 

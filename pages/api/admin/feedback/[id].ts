@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { recordAudit, requireAdmin } from "@/lib/authz";
 import { adminClient } from "@/lib/supabase/admin";
 import { isUuid, oneOf, sanitizeText } from "@/lib/validation";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { requireSameOrigin } from "@/lib/security";
 
 const STATUSES = ["open", "in_review", "resolved", "dismissed"] as const;
 
@@ -14,6 +16,8 @@ export default async function handler(
     res.setHeader("Allow", "PATCH");
     return res.status(405).json({ error: "Method not allowed" });
   }
+  if (!requireSameOrigin(req, res)) return;
+  if (!enforceRateLimit(req, res, "admin-feedback", 60, 60_000)) return;
 
   const ctx = await requireAdmin(req, res);
   if (!ctx) return;

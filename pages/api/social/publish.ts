@@ -1,89 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getAuthContext, isAccountActive, isAdmin, isOrgMember } from "@/lib/authz";
+import { getAuthContext, isAccountActive, isAdmin, isOrgMember, recordAudit } from "@/lib/authz";
 import { adminClient } from "@/lib/supabase/admin";
 import { decryptSecret } from "@/lib/crypto";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { isUuid, sanitizeText } from "@/lib/validation";
 import { logEvent } from "@/lib/logger";
-
-const GRAPH = "https://graph.facebook.com/v21.0";
-
-async function graphPost(path: string, params: Record<string, string>) {
-  const body = new URLSearchParams(params).toString();
-  const res = await fetch(`${GRAPH}/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.error) {
-    throw new Error(json?.error?.message || `Erreur Graph API (${res.status})`);
-  }
-  return json as { id?: string; post_id?: string };
-}
-
-type Result = { platform: string; ok: boolean; id?: string; error?: string };
-
-async function publishFacebook(
-  accountId: string,
-  token: string,
-  caption: string,
-  imageUrl: string | null,
-  linkUrl: string | null,
-): Promise<Result> {
-  try {
-    if (imageUrl) {
-      const r = await graphPost(`${accountId}/photos`, {
-        url: imageUrl,
-        caption,
-        access_token: token,
-      });
-      return { platform: "facebook", ok: true, id: r.id };
-    }
-    const params: Record<string, string> = { message: caption, access_token: token };
-    if (linkUrl) params.link = linkUrl;
-    const r = await graphPost(`${accountId}/feed`, params);
-    return { platform: "facebook", ok: true, id: r.id };
-  } catch (e) {
-    return { platform: "facebook", ok: false, error: (e as Error).message };
-  }
-}
-
-async function publishInstagram(
-  accountId: string,
-  token: string,
-  caption: string,
-  imageUrl: string | null,
-): Promise<Result> {
-  try {
-    if (!imageUrl) {
-      return {
-        platform: "instagram",
-        ok: false,
-        error: "Instagram exige une image accessible publiquement.",
-      };
-    }
-    const container = await graphPost(`${accountId}/media`, {
-      image_url: imageUrl,
-      caption,
-      access_token: token,
-    });
-    if (!container.id) {
-      return { platform: "instagram", ok: false, error: "Création du média échouée." };
-    }
-    const published = await graphPost(`${accountId}/media_publish`, {
-      creation_id: container.id,
-      access_token: token,
-    });
-    return { platform: "instagram", ok: true, id: published.id };
-  } catch (e) {
-    return { platform: "instagram", ok: false, error: (e as Error).message };
-  }
-}
+import {
+  crosspostCaption,
+  hashtagForOrg,
+  publishFacebook,
+  publishInstagram,
+  type SocialResult,
+} from "@/lib/social";
+import { requireSameOrigin } from "@/lib/security";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
+  if (!requireSameOrigin(req, res)) return;
   if (!enforceRateLimit(req, res, "social-publish", 15, 10 * 60_000)) return;
 
   const ctx = await getAuthContext(req, res);
@@ -117,15 +50,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!allowed) return res.status(403).json({ error: "Accès refusé." });
 
   const admin = adminClient();
-  const { data: accounts, error } = await admin
-    .from("organization_social_accounts")
-    .select("platform, account_id, access_token")
-    .eq("org_id", org_id)
-    .in("platform", chosen);
+  const [{ data: org }, { data: accounts, error }] = await Promise.all([
+    admin.from("organizations").select("name").eq("id", org_id).maybeSingle(),
+    admin
+      .from("organization_social_accounts")
+      .select("platform, account_id, access_token")
+      .eq("org_id", org_id)
+      .in("platform", chosen),
+  ]);
 
   if (error) return res.status(500).json({ error: "Lecture des comptes impossible." });
 
-  const results: Result[] = [];
+  const results: SocialResult[] = [];
   for (const platform of chosen) {
     const acc = (accounts ?? []).find((a) => a.platform === platform);
     if (!acc) {
@@ -156,22 +92,106 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // Log the attempt (never stores tokens). Best-effort.
-  await admin.from("social_posts").insert({
-    org_id,
-    author_id: ctx.user.id,
-    caption: caption.trim(),
-    image_url: imageUrl,
-    link_url: linkUrl,
-    platforms: chosen,
-    results,
-  });
+  const { data: orgPost } = await admin
+    .from("social_posts")
+    .insert({
+      org_id,
+      author_id: ctx.user.id,
+      caption: caption.trim(),
+      image_url: imageUrl,
+      link_url: linkUrl,
+      platforms: chosen,
+      results,
+      scope: "organization",
+    })
+    .select("id")
+    .maybeSingle();
 
-  const anyOk = results.some((r) => r.ok);
+  // Republish on the platform-owned pages. The org's own accounts are skipped
+  // if they happen to be the same Page/IG account, to avoid duplicate posts.
+  const centralResults: SocialResult[] = [];
+  let centralHashtag: string | null = null;
+  if (org?.name) {
+    const orgAccountIds = new Set((accounts ?? []).map((a) => a.account_id));
+    const central = (
+      await admin
+        .from("platform_social_accounts")
+        .select("platform, account_id, access_token")
+    ).data ?? [];
+
+    const eligibleCentral = central.filter((a) => !orgAccountIds.has(a.account_id));
+    if (eligibleCentral.length > 0) {
+      const centralCaption = crosspostCaption(caption.trim(), org.name);
+      centralHashtag = `${hashtagForOrg(org.name)} #YedLkhir`;
+      for (const acc of eligibleCentral) {
+        let token: string;
+        try {
+          token = decryptSecret(acc.access_token);
+        } catch {
+          centralResults.push({
+            platform: acc.platform,
+            ok: false,
+            error: "Jeton central illisible : reconfigurez le compte plateforme.",
+          });
+          continue;
+        }
+        if (acc.platform === "facebook") {
+          centralResults.push(
+            await publishFacebook(
+              acc.account_id,
+              token,
+              centralCaption,
+              imageUrl,
+              linkUrl,
+            ),
+          );
+        } else {
+          centralResults.push(
+            await publishInstagram(acc.account_id, token, centralCaption, imageUrl),
+          );
+        }
+      }
+
+      await admin.from("social_posts").insert({
+        org_id: null,
+        source_org_id: org_id,
+        source_post_id: orgPost?.id ?? null,
+        author_id: ctx.user.id,
+        caption: centralCaption,
+        image_url: imageUrl,
+        link_url: linkUrl,
+        platforms: eligibleCentral.map((a) => a.platform),
+        results: centralResults,
+        scope: "crosspost",
+      });
+    }
+  }
+
+  if (centralResults.length > 0) {
+    await recordAudit({
+      actorId: ctx.user.id,
+      actorEmail: ctx.user.email,
+      action: "social.crosspost",
+      targetType: "social_post",
+      targetId: orgPost?.id ?? undefined,
+      metadata: {
+        org_id,
+        platforms: centralResults.map((result) => result.platform),
+        ok: centralResults.filter((result) => result.ok).map((result) => result.platform),
+      },
+    });
+  }
+
+  const anyOk = results.some((r) => r.ok) || centralResults.some((r) => r.ok);
   logEvent(anyOk ? "info" : "warn", "social.publish", {
     org_id,
     platforms: chosen,
     ok: results.filter((r) => r.ok).map((r) => r.platform),
+    central_ok: centralResults.filter((r) => r.ok).map((r) => r.platform),
   });
-  return res.status(anyOk ? 200 : 502).json({ results });
+  return res.status(anyOk ? 200 : 502).json({
+    results,
+    central_results: centralResults,
+    central_hashtag: centralHashtag,
+  });
 }

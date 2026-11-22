@@ -3,6 +3,8 @@ import { requireAdmin, recordAudit } from "@/lib/authz";
 import { adminClient } from "@/lib/supabase/admin";
 import { isUuid, oneOf, sanitizeText } from "@/lib/validation";
 import { logEvent } from "@/lib/logger";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { requireSameOrigin } from "@/lib/security";
 
 const ACTIONS = [
   "suspend",
@@ -33,6 +35,8 @@ export default async function handler(
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
   }
+  if (!requireSameOrigin(req, res)) return;
+  if (!enforceRateLimit(req, res, "admin-organizer", 60, 60_000)) return;
 
   const action = oneOf(req.body?.action, ACTIONS);
   const reason = sanitizeText(req.body?.reason, 500);

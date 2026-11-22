@@ -673,10 +673,46 @@ export type Database = {
           },
         ];
       };
+      platform_social_accounts: {
+        Row: {
+          id: string;
+          platform: "facebook" | "instagram";
+          account_id: string;
+          account_name: string | null;
+          public_url: string | null;
+          access_token: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          platform: "facebook" | "instagram";
+          account_id: string;
+          account_name?: string | null;
+          public_url?: string | null;
+          access_token: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          platform?: "facebook" | "instagram";
+          account_id?: string;
+          account_name?: string | null;
+          public_url?: string | null;
+          access_token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       social_posts: {
         Row: {
           id: string;
-          org_id: string;
+          org_id: string | null;
+          scope: "organization" | "platform" | "crosspost";
+          source_org_id: string | null;
+          source_post_id: string | null;
           author_id: string | null;
           caption: string | null;
           image_url: string | null;
@@ -687,7 +723,10 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          org_id: string;
+          org_id?: string | null;
+          scope?: "organization" | "platform" | "crosspost";
+          source_org_id?: string | null;
+          source_post_id?: string | null;
           author_id?: string | null;
           caption?: string | null;
           image_url?: string | null;
@@ -698,7 +737,10 @@ export type Database = {
         };
         Update: {
           id?: string;
-          org_id?: string;
+          org_id?: string | null;
+          scope?: "organization" | "platform" | "crosspost";
+          source_org_id?: string | null;
+          source_post_id?: string | null;
           author_id?: string | null;
           caption?: string | null;
           image_url?: string | null;

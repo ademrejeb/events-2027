@@ -156,7 +156,11 @@ export type AuditAction =
   | "admin.revoke"
   | "event.moderate"
   | "feedback.update"
-  | "account.status.change";
+  | "account.status.change"
+  | "social.account.connect"
+  | "social.account.disconnect"
+  | "social.publish"
+  | "social.crosspost";
 
 export async function recordAudit(input: {
   actorId?: string | null;

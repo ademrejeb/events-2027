@@ -165,6 +165,41 @@ Once connected, regenerate the TypeScript types to match your schema:
 npx supabase gen types typescript --project-id YOUR_PROJECT_REF --schema public > lib/supabase/types.ts
 ```
 
+## Réseaux sociaux centraux
+
+L’administration (`/admin/social`) connecte **une page Facebook** et **un compte
+Instagram Business** appartenant à la plateforme :
+
+- **Facebook** : ID de la page + jeton de page avec `pages_manage_posts` et
+  `pages_read_engagement`.
+- **Instagram** : ID du compte Business + jeton avec `instagram_content_publish`
+  et `instagram_basic`. Une image publique HTTPS est obligatoire.
+
+Chaque connexion est vérifiée auprès de Meta avant d’être enregistrée. Le jeton
+est chiffré (AES-256-GCM), n’est jamais renvoyé au navigateur et la table
+`platform_social_accounts` n’a aucune policy RLS (service role uniquement).
+
+Quand une organisation publie depuis son tableau de bord :
+
+1. la publication part sur ses propres pages ;
+2. elle est recopiée sur les pages centrales avec **`#Organisation`** et
+   **`#YedLkhir`** (l’organisation est identifiée par un hashtag stable dérivé
+   de son nom) ;
+3. le résultat de chaque réseau est conservé et visible dans l’historique
+   admin.
+
+Le compositeur central permet aussi de publier directement (annonce, appel à
+bénévoles) avec image et lien. Toutes les actions sont journalisées
+(`social.account.connect`, `social.account.disconnect`, `social.publish`,
+`social.crosspost`).
+
+**Sécurité admin** : pages protégées côté serveur, API admin uniquement,
+contrôle d’origine (CSRF) sur les mutations, limitation de débit, IDs Meta
+numériques validés, erreurs Graph nettoyées pour ne jamais exposer un jeton.
+
+La version Graph est `META_GRAPH_VERSION` (défaut `v25.0`). Meta supporte
+chaque version environ deux ans ; mettez-la à jour dans l’environnement.
+
 ## Deployment
 
 Deploy the Next.js app on [Vercel](https://vercel.com) and add the same two env

@@ -5,6 +5,7 @@ import { encryptSecret, isEncryptionConfigured } from "@/lib/crypto";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { isUuid, sanitizeText } from "@/lib/validation";
 import { logEvent } from "@/lib/logger";
+import { requireSameOrigin } from "@/lib/security";
 
 const PLATFORMS = ["facebook", "instagram"] as const;
 
@@ -50,6 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
+    if (!requireSameOrigin(req, res)) return;
     if (!enforceRateLimit(req, res, "social-connect", 20, 10 * 60_000)) return;
     if (!isEncryptionConfigured()) {
       logEvent("warn", "social.token_encryption_missing");
@@ -65,6 +67,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (!accountId || !accessToken) {
       return res.status(400).json({ error: "Identifiant et jeton requis." });
+    }
+    if (!/^\d{5,25}$/.test(accountId)) {
+      return res.status(400).json({
+        error: "L’identifiant Meta doit être numérique (ID de page ou de compte Instagram).",
+      });
     }
 
     const { error } = await admin.from("organization_social_accounts").upsert(
@@ -89,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "DELETE") {
+    if (!requireSameOrigin(req, res)) return;
     if (!enforceRateLimit(req, res, "social-disconnect", 20, 10 * 60_000)) return;
     const platform =
       typeof req.query.platform === "string"
