@@ -113,7 +113,11 @@ async function connectAccount(
   try {
     const verified = await verifySocialAccount(platform, accountId, accessToken);
     verifiedName = accountName ?? verified.name;
-    verifiedUrl = publicUrl ?? verified.publicUrl;
+    verifiedUrl =
+      publicUrl ??
+      (verified.publicUrl
+        ? sanitizeHostedUrl(verified.publicUrl, PLATFORM_HOSTS[platform])
+        : null);
   } catch (error) {
     return res.status(400).json({
       error: `Meta a refusé ce jeton : ${(error as Error).message}`,

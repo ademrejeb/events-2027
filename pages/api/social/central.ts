@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { adminClient } from "@/lib/supabase/admin";
 import { withApiLog } from "@/lib/api-log";
+import { sanitizeHostedUrl } from "@/lib/validation";
 
 /**
  * Public links to the platform-owned Facebook Page / Instagram account.
@@ -24,8 +25,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const links = { facebook: null as string | null, instagram: null as string | null };
   for (const row of data ?? []) {
-    if (row.platform === "facebook") links.facebook = row.public_url;
-    if (row.platform === "instagram") links.instagram = row.public_url;
+    // Defence in depth: even a tampered row can only become a real page URL.
+    if (row.platform === "facebook") {
+      links.facebook = sanitizeHostedUrl(row.public_url, ["facebook.com"]);
+    }
+    if (row.platform === "instagram") {
+      links.instagram = sanitizeHostedUrl(row.public_url, ["instagram.com"]);
+    }
   }
 
   res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
