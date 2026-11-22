@@ -67,14 +67,14 @@ export default function OrganizationsDirectory() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-72">
+            <div className="w-full sm:w-80">
               <Input
                 placeholder="Rechercher une organisation"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {TYPES.map((t) => (
                 <Button
                   key={t.id}
@@ -125,7 +125,7 @@ export default function OrganizationsDirectory() {
                           </h2>
                           {org.verified && <Badge variant="info">✓</Badge>}
                         </div>
-                        <p className="text-xs capitalize text-zinc-500">
+                        <p className="mt-1 text-xs capitalize text-zinc-500">
                           {org.type}
                           {org.city ? ` · ${org.city}` : ""}
                         </p>

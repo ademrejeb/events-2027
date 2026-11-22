@@ -64,7 +64,7 @@ export default function Nav() {
   const initial = (firstName ?? user?.email ?? "?").charAt(0).toUpperCase();
   const isOrganizer = account?.organizer_status === "approved";
   const navLink =
-    "rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-700";
+    "rounded-full px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-700";
   const accountItem =
     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900";
 
@@ -74,7 +74,7 @@ export default function Nav() {
         <Flex align="center" justify="between" style={{ height: 72 }}>
           <Flex align="center" gap={6}>
             <Logo />
-            <nav className="hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
+            <nav className="hidden items-center gap-2 lg:flex" aria-label="Navigation principale">
               {NAV_LINKS.map((item) => (
                 <Link key={item.href} href={item.href} className={navLink}>
                   {item.label}
@@ -83,7 +83,7 @@ export default function Nav() {
             </nav>
           </Flex>
 
-          <Flex align="center" gap={2}>
+          <Flex align="center" gap={3}>
             <button
               type="button"
               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 lg:hidden"

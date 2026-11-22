@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Marker as MLMarker } from "maplibre-gl";
-import {
-  boostMapLabels,
-  collapseAttribution,
-  createLocationPin,
-  loadMapLibre,
-  MAP_STYLE,
-} from "@/lib/maplibre";
+import { createLocationPin, loadMapLibre, MAP_STYLE } from "@/lib/maplibre";
 
 type GeoResult = {
   display_name: string;
@@ -101,17 +95,15 @@ export default function LocationPicker({
         container: containerRef.current,
         style: MAP_STYLE,
         center: start ? [start[1], start[0]] : [10.1815, 36.8065],
-        zoom: start ? 13 : 6,
+        zoom: start ? 16 : 6,
         minZoom: 5,
-        maxZoom: 18,
-        attributionControl: { compact: true },
+        maxZoom: 19,
+        attributionControl: { compact: false },
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
       });
       mapRef.current = map;
-      map.on("style.load", () => boostMapLabels(map!));
-      collapseAttribution(map);
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
 
       marker = new ml.Marker({
@@ -162,7 +154,7 @@ export default function LocationPicker({
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !focus) return;
-    map.flyTo({ center: [focus[1], focus[0]], zoom: 15, duration: 800 });
+    map.flyTo({ center: [focus[1], focus[0]], zoom: 16, duration: 800 });
   }, [ready, focus]);
 
   async function search(e: React.FormEvent) {

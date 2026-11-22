@@ -298,7 +298,7 @@ export default function EventDetailPage() {
         ) : null}
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main */}
-          <div className="space-y-8 lg:col-span-2">
+          <div className="min-w-0 space-y-8 lg:col-span-2">
             <div className="flex flex-wrap gap-2">
               {[
                 `${formatEventDate(event.start_at)}${event.end_at ? ` → ${formatEventDate(event.end_at)}` : ""}`,
@@ -354,12 +354,38 @@ export default function EventDetailPage() {
                   <h2 className="mb-3 text-lg font-semibold text-zinc-900">
                     Après l&rsquo;action
                   </h2>
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    {(event.after_images?.length ?? 0)} photo
-                    {(event.after_images?.length ?? 0) > 1 ? "s" : ""} déjà prête
-                    {(event.after_images?.length ?? 0) > 1 ? "s" : ""}. Elles seront
-                    publiées automatiquement le{" "}
-                    {formatEventDate(event.end_at ?? event.start_at)}.
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                    <p className="text-sm font-semibold">
+                      {(() => {
+                        const count = event.after_images?.length ?? 0;
+                        return count === 1
+                          ? "1 photo est prête"
+                          : `${count} photos sont prêtes`;
+                      })()}
+                      {" · aperçu privé"}
+                    </p>
+                    <p className="mt-1 text-sm text-amber-800">
+                      Publication automatique le{" "}
+                      {formatEventDate(event.end_at ?? event.start_at)}.
+                    </p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {(event.after_images ?? []).map((url) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative block aspect-square overflow-hidden rounded-lg border border-amber-200 bg-white"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt="Photo après l'action, en attente de publication"
+                            className="h-full w-full object-cover transition group-hover:scale-105"
+                          />
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </section>
               ) : null)}
@@ -397,8 +423,8 @@ export default function EventDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <aside className="min-w-0 lg:col-span-1">
+            <div className="min-w-0 sticky top-24 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
               <div className="flex items-end justify-between">
                 <div>
                   <p className="text-3xl font-extrabold tabular-nums text-zinc-900">
@@ -523,7 +549,9 @@ export default function EventDetailPage() {
                     Participer en tant que bénévole
                   </Button>
                 ) : started ? (
-                  <p className="text-center text-sm text-zinc-500">Cet événement a commencé</p>
+                  <p className="text-center text-sm text-zinc-500">
+                    {afterVisible ? "Cette action est terminée." : "Cet événement a commencé."}
+                  </p>
                 ) : full ? (
                   <p className="text-center text-sm text-zinc-500">Complet</p>
                 ) : (
@@ -551,16 +579,16 @@ export default function EventDetailPage() {
                     {org.public_email && (
                       <a
                         href={`mailto:${org.public_email}`}
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">✉</span>
-                        <span className="truncate">{org.public_email}</span>
+                        <span className="min-w-0 truncate">{org.public_email}</span>
                       </a>
                     )}
                     {org.public_phone && (
                       <a
                         href={`tel:${org.public_phone.replace(/[^\d+]/g, "")}`}
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">☎</span>
                         <span>{org.public_phone}</span>
@@ -571,10 +599,10 @@ export default function EventDetailPage() {
                         href={org.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">↗</span>
-                        <span className="truncate">{org.website}</span>
+                        <span className="min-w-0 truncate">{org.website}</span>
                       </a>
                     )}
                     <SocialLinks

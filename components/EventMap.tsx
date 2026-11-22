@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
-import {
-  boostMapLabels,
-  collapseAttribution,
-  loadMapLibre,
-  MAP_STYLE,
-} from "@/lib/maplibre";
+import { loadMapLibre, MAP_STYLE } from "@/lib/maplibre";
 import { EVENT_CATEGORY_STYLES, FALLBACK_CATEGORY_STYLE, eventCategoryStyle } from "@/lib/event-style";
 
 type MapEvent = {
@@ -141,7 +136,7 @@ export default function EventMap({
   const initialView = useRef({
     lat: mapCenter[0],
     lng: mapCenter[1],
-    zoom: center ? 14 : 6,
+    zoom: center ? 16 : 6,
   });
 
   const centerLat = center?.[0];
@@ -172,15 +167,13 @@ export default function EventMap({
         center: [initialView.current.lng, initialView.current.lat],
         zoom: initialView.current.zoom,
         minZoom: 5,
-        maxZoom: 18,
-        attributionControl: { compact: true },
+        maxZoom: 19,
+        attributionControl: { compact: false },
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
       });
       mapRef.current = map;
-      map.on("style.load", () => boostMapLabels(map!));
-      collapseAttribution(map);
       map.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
       map.on("load", () => {
         if (cancelled) return;
@@ -295,7 +288,7 @@ export default function EventMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || centerLat == null || centerLng == null) return;
-    map.flyTo({ center: [centerLng, centerLat], zoom: 14, duration: 1100 });
+    map.flyTo({ center: [centerLng, centerLat], zoom: 16, duration: 1100 });
   }, [ready, centerLat, centerLng]);
 
   useEffect(() => {
@@ -304,7 +297,7 @@ export default function EventMap({
     if (!ready || !map || !ml || centerLat != null || points.length === 0) return;
 
     if (points.length === 1) {
-      map.easeTo({ center: [points[0][1], points[0][0]], zoom: 12, duration: 600 });
+      map.easeTo({ center: [points[0][1], points[0][0]], zoom: 16, duration: 600 });
       return;
     }
 

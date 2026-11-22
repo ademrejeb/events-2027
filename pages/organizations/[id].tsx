@@ -141,7 +141,7 @@ export default function OrgProfile() {
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-2">
+          <div className="min-w-0 space-y-8 lg:col-span-2">
             {org.description && (
               <section>
                 <h2 className="mb-3 text-lg font-semibold text-zinc-900">À propos</h2>
@@ -169,8 +169,8 @@ export default function OrgProfile() {
             </section>
           </div>
 
-          <aside className="lg:col-span-1">
-            <div className="space-y-4 lg:sticky lg:top-24">
+          <aside className="min-w-0 lg:col-span-1">
+            <div className="min-w-0 space-y-4 lg:sticky lg:top-24">
               {hasContact && (
                 <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">Contact</h2>
@@ -178,16 +178,16 @@ export default function OrgProfile() {
                     {org.public_email && (
                       <a
                         href={`mailto:${org.public_email}`}
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">✉</span>
-                        <span className="truncate">{org.public_email}</span>
+                        <span className="min-w-0 truncate">{org.public_email}</span>
                       </a>
                     )}
                     {org.public_phone && (
                       <a
                         href={`tel:${org.public_phone.replace(/[^\d+]/g, "")}`}
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">☎</span>
                         <span>{org.public_phone}</span>
@@ -198,10 +198,10 @@ export default function OrgProfile() {
                         href={org.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
+                        className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 hover:text-red-700"
                       >
                         <span className="text-zinc-400">↗</span>
-                        <span className="truncate">{org.website}</span>
+                        <span className="min-w-0 truncate">{org.website}</span>
                       </a>
                     )}
                     <SocialLinks

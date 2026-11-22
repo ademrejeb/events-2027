@@ -72,7 +72,7 @@ export default function CreateEvent() {
   if (loading || !user || !canCreate || !initial) {
     return (
       <Layout>
-        <div className="mx-auto w-full max-w-4xl px-4 py-10">
+        <div className="mx-auto w-full max-w-5xl px-4 py-10">
           <Skeleton height={28} width="45%" />
           <div className="mt-6 space-y-4">
             <Skeleton height={56} />
@@ -129,7 +129,7 @@ export default function CreateEvent() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
         <Link href="/" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
           ← Retour
         </Link>

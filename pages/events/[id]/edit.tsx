@@ -117,7 +117,7 @@ export default function EditEvent() {
     return (
       <Layout>
         {error ? (
-          <div className="mx-auto max-w-4xl px-4 py-20 text-center">
+          <div className="mx-auto max-w-5xl px-4 py-20 text-center">
             <p className="text-zinc-500">{error}</p>
             <Link href="/" className="mt-4 inline-block text-red-600 hover:underline">
               Retour
@@ -168,7 +168,7 @@ export default function EditEvent() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
         <Link
           href={`/events/${event.id}`}
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
