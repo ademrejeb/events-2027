@@ -34,8 +34,8 @@ type Status = FeedbackRow["status"];
 const STATUS_LABELS: Record<Status, string> = {
   open: "Nouveau",
   in_review: "En cours",
-  resolved: "RÃ©solu",
-  dismissed: "ClassÃ©",
+  resolved: "Résolu",
+  dismissed: "Classé",
 };
 
 const STATUS_TONE: Record<Status, "warning" | "info" | "success" | "neutral"> = {
@@ -46,9 +46,9 @@ const STATUS_TONE: Record<Status, "warning" | "info" | "success" | "neutral"> = 
 };
 
 const TYPE_LABELS: Record<FeedbackRow["type"], string> = {
-  improvement: "AmÃ©lioration",
+  improvement: "Amélioration",
   bug: "Bug",
-  data: "DonnÃ©e",
+  data: "Donnée",
   other: "Autre",
 };
 
@@ -66,8 +66,8 @@ const FILTERS: { id: "" | Status; label: string }[] = [
   { id: "", label: "Tous" },
   { id: "open", label: "Nouveaux" },
   { id: "in_review", label: "En cours" },
-  { id: "resolved", label: "RÃ©solus" },
-  { id: "dismissed", label: "ClassÃ©s" },
+  { id: "resolved", label: "Résolus" },
+  { id: "dismissed", label: "Classés" },
 ];
 
 export const getServerSideProps: GetServerSideProps<{ profile: ProfileRow }> =
@@ -159,7 +159,7 @@ export default function AdminFeedback({ profile }: { profile: ProfileRow }) {
   return (
     <AdminShell
       title="Signalements"
-      description={`${profile.full_name ?? profile.id} Â· messages envoyÃ©s depuis la page Ã€ propos.`}
+      description={`${profile.full_name ?? profile.id} · messages envoyés depuis la page À propos.`}
       actions={
         <Button variant="outline" onClick={refresh}>
           Actualiser
@@ -212,7 +212,7 @@ export default function AdminFeedback({ profile }: { profile: ProfileRow }) {
         {items && items.length === 0 && (
           <EmptyState
             title="Aucun signalement"
-            description="Les messages envoyÃ©s depuis la page Ã€ propos apparaÃ®tront ici."
+            description="Les messages envoyés depuis la page À propos apparaîtront ici."
           />
         )}
 
@@ -337,8 +337,8 @@ export default function AdminFeedback({ profile }: { profile: ProfileRow }) {
         )}
 
         <Text tone="muted" size="xs">
-          Les signalements sont stockÃ©s cÃ´tÃ© serveur uniquement : aucune donnÃ©e de
-          contact n&rsquo;est exposÃ©e publiquement.
+          Les signalements sont stockés côté serveur uniquement : aucune donnée de
+          contact n&rsquo;est exposée publiquement.
         </Text>
       </Stack>
     </AdminShell>
