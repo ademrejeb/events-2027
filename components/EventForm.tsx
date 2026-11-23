@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import ImageUpload from "@/components/ImageUpload";
 import PhotoGalleryUpload from "@/components/PhotoGalleryUpload";
+import { TUNISIA_GOVERNORATES, canonicalGovernorate } from "@/lib/tunisia";
 import {
   Alert,
   Button,
@@ -68,7 +69,10 @@ function validate(v: EventFormValues): FieldErrors {
   if (title.length < 3) e.title = "Le titre doit contenir au moins 3 caractères.";
   else if (title.length > 120) e.title = "Le titre est trop long (120 caractères max).";
   if (!v.category_id) e.category_id = "Choisissez une catégorie.";
-  if (!v.city.trim()) e.city = "Indiquez la ville.";
+  if (!v.city.trim()) e.city = "Choisissez un gouvernorat.";
+  else if (!(TUNISIA_GOVERNORATES as readonly string[]).includes(v.city)) {
+    e.city = "Choisissez un gouvernorat dans la liste.";
+  }
   if (!v.start_at) e.start_at = "Indiquez la date de début.";
   if (v.end_at && v.start_at && new Date(v.end_at) < new Date(v.start_at)) {
     e.end_at = "La fin doit être postérieure au début.";
@@ -102,15 +106,16 @@ export default function EventForm({
   onSubmit,
   cancelHref,
 }: Props) {
-  const [values, setValues] = useState<EventFormValues>(initial ?? emptyEventForm);
+  const [values, setValues] = useState<EventFormValues>(() => {
+    const base = initial ?? emptyEventForm;
+    const governorate = canonicalGovernorate(base.city);
+    return governorate ? { ...base, city: governorate } : base;
+  });
   const [touched, setTouched] = useState(false);
   const [pendingLat, setPendingLat] = useState("");
   const [pendingLng, setPendingLng] = useState("");
   const [showExtra, setShowExtra] = useState(false);
-  const [placeOptions, setPlaceOptions] = useState<{
-    cities: string[];
-    locations: string[];
-  }>({ cities: [], locations: [] });
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -118,10 +123,7 @@ export default function EventForm({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data || controller.signal.aborted) return;
-        setPlaceOptions({
-          cities: Array.isArray(data.cities) ? data.cities : [],
-          locations: Array.isArray(data.locations) ? data.locations : [],
-        });
+        setLocationOptions(Array.isArray(data.locations) ? data.locations : []);
       })
       .catch(() => {});
     return () => controller.abort();
@@ -137,20 +139,15 @@ export default function EventForm({
   }
 
   function rememberPlace(label: string) {
-    const value = canonicalPlace(label, placeOptions.locations);
+    const value = canonicalPlace(label, locationOptions);
     if (!value) return;
     setValues((prev) => ({ ...prev, location: value }));
-    setPlaceOptions((prev) =>
-      prev.locations.some(
+    setLocationOptions((prev) =>
+      prev.some(
         (option) => option.toLocaleLowerCase("fr") === value.toLocaleLowerCase("fr"),
       )
         ? prev
-        : {
-            ...prev,
-            locations: [...prev.locations, value].sort((a, b) =>
-              a.localeCompare(b, "fr"),
-            ),
-          },
+        : [...prev, value].sort((a, b) => a.localeCompare(b, "fr")),
     );
   }
 
@@ -288,16 +285,19 @@ export default function EventForm({
           <Card.Body>
             <Stack gap={6}>
               <div className="grid gap-5 sm:grid-cols-2">
-                <FormField label="Ville" required error={show("city")}>
-                  <Input
-                    type="text"
-                    list="yl-city-options"
+                <FormField label="Gouvernorat" required error={show("city")}>
+                  <Select
                     value={values.city}
                     onChange={(e) => set("city", e.target.value)}
-                    onBlur={() => set("city", canonicalPlace(values.city, placeOptions.cities))}
-                    placeholder="Tunis"
                     aria-invalid={touched && !!errors.city}
-                  />
+                  >
+                    <option value="">Choisir un gouvernorat</option>
+                    {TUNISIA_GOVERNORATES.map((governorate) => (
+                      <option key={governorate} value={governorate}>
+                        {governorate}
+                      </option>
+                    ))}
+                  </Select>
                 </FormField>
                 <FormField label="Lieu précis" optional>
                   <Input
@@ -306,7 +306,7 @@ export default function EventForm({
                     value={values.location}
                     onChange={(e) => set("location", e.target.value)}
                     onBlur={() =>
-                      set("location", canonicalPlace(values.location, placeOptions.locations))
+                      set("location", canonicalPlace(values.location, locationOptions))
                     }
                     placeholder="Choisissez un lieu…"
                   />
@@ -553,13 +553,8 @@ export default function EventForm({
           </Button>
         </Stack>
 
-        <datalist id="yl-city-options">
-          {placeOptions.cities.map((city) => (
-            <option key={city} value={city} />
-          ))}
-        </datalist>
         <datalist id="yl-location-options">
-          {[...placeOptions.locations, ...(values.location ? [values.location] : [])]
+          {[...locationOptions, ...(values.location ? [values.location] : [])]
             .filter(
               (value, index, all) =>
                 all.findIndex(

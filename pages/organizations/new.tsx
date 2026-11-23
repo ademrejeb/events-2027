@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { useSession } from "@/lib/session";
-import { Alert, Button, FormField, Input, Skeleton, Stack, Text, Textarea } from "@adem.rejeb/ui";
+import { Alert, Button, FormField, Input, Select, Skeleton, Stack, Text, Textarea } from "@adem.rejeb/ui";
+import { TUNISIA_GOVERNORATES } from "@/lib/tunisia";
 
 type OrgType =
   | "association"
@@ -165,13 +166,15 @@ export default function CreateOrganization() {
                 />
               </FormField>
 
-              <FormField label="Ville (siège)">
-                <Input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Tunis"
-                />
+              <FormField label="Gouvernorat (siège)">
+                <Select value={city} onChange={(e) => setCity(e.target.value)}>
+                  <option value="">Choisir un gouvernorat</option>
+                  {TUNISIA_GOVERNORATES.map((governorate) => (
+                    <option key={governorate} value={governorate}>
+                      {governorate}
+                    </option>
+                  ))}
+                </Select>
               </FormField>
 
               <FormField label="Description">

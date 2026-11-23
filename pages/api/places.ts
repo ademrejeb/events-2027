@@ -4,12 +4,11 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { internalError } from "@/lib/api-error";
 
 /**
- * Canonical city / venue options for the event form.
+ * Canonical venue options for the event form.
  *
- * Only published events are read, and only the spellings already in use are
- * returned (de-duplicated case-insensitively). The form offers them as a
- * datalist so organisers reuse an existing spelling instead of inventing a
- * second one for the same place.
+ * Cities come from the fixed governorate list (`lib/tunisia.ts`); this endpoint
+ * only returns the precise venue spellings already used by published events,
+ * de-duplicated case-insensitively, so organisers reuse one spelling.
  */
 function unique(values: (string | null | undefined)[]): string[] {
   const seen = new Map<string, string>();
@@ -46,7 +45,7 @@ export default async function handler(
   const supabase = adminClient();
   const { data, error } = await supabase
     .from("events")
-    .select("city, location")
+    .select("location")
     .eq("status", "published")
     .limit(1000);
 
@@ -62,7 +61,6 @@ export default async function handler(
 
   res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
   return res.status(200).json({
-    cities: unique((data ?? []).map((event) => event.city)),
     locations: unique((data ?? []).map((event) => event.location)),
   });
 }
