@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "@/components/Layout";
 import EventCard, { type EventListItem } from "@/components/EventCard";
+import BadgeTrackCard from "@/components/BadgeTrackCard";
+import { type BadgeTrack } from "@/lib/badges";
 import SocialLinks from "@/components/SocialLinks";
 import { Button } from "@adem.rejeb/ui";
 
@@ -30,6 +32,8 @@ export default function OrgProfile() {
   const { id } = router.query;
   const [org, setOrg] = useState<Org | null>(null);
   const [events, setEvents] = useState<EventListItem[]>([]);
+  const [badgeTracks, setBadgeTracks] = useState<BadgeTrack[]>([]);
+  const [badgesEarned, setBadgesEarned] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -49,6 +53,8 @@ export default function OrgProfile() {
         if (controller.signal.aborted) return;
         setOrg(data.organization as Org);
         setEvents((data.events as EventListItem[]) ?? []);
+        setBadgeTracks((data.badge_tracks as BadgeTrack[]) ?? []);
+        setBadgesEarned(typeof data.badges_earned === "number" ? data.badges_earned : 0);
         setError(null);
       } catch (e) {
         if (controller.signal.aborted) return;
@@ -148,6 +154,27 @@ export default function OrgProfile() {
                 <p className="whitespace-pre-line leading-relaxed text-zinc-600">
                   {org.description}
                 </p>
+              </section>
+            )}
+
+            {badgeTracks.length > 0 && (
+              <section>
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-semibold text-zinc-900">Badges</h2>
+                    <p className="text-xs text-zinc-500">
+                      Attribués automatiquement selon l’activité de l’organisation.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-600">
+                    {badgesEarned} / {badgeTracks.length} obtenus
+                  </span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {badgeTracks.map((track) => (
+                    <BadgeTrackCard key={track.slug} track={track} />
+                  ))}
+                </div>
               </section>
             )}
 

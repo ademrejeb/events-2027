@@ -78,11 +78,11 @@ export type BadgeStats = {
   momentum: number;
 };
 
-const TENURE_THRESHOLDS: number[] = [1, 6, 12, 24];
-const CREATED_THRESHOLDS: number[] = [1, 5, 15, 40];
-const IMPACT_ORG_THRESHOLDS: number[] = [3, 15, 50, 150];
-const IMPACT_VOLUNTEER_THRESHOLDS: number[] = [1, 5, 15, 30];
-const MOMENTUM_THRESHOLDS: number[] = [1, 3, 6, 12];
+const TENURE_THRESHOLDS: number[] = [1, 6, 18, 36];
+const CREATED_THRESHOLDS: number[] = [1, 6, 20, 50];
+const IMPACT_ORG_THRESHOLDS: number[] = [5, 25, 100, 250];
+const IMPACT_VOLUNTEER_THRESHOLDS: number[] = [2, 8, 20, 50];
+const MOMENTUM_THRESHOLDS: number[] = [1, 4, 8, 16];
 
 const tierThresholds = (values: number[]): BadgeThreshold[] =>
   values.map((threshold, index) => ({

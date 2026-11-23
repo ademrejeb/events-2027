@@ -13,12 +13,13 @@ import {
   isValidPhone,
 } from "@/lib/validation";
 import { withApiLog } from "@/lib/api-log";
+import { buildBadgeTracks, earnedBadgeCount } from "@/lib/badges";
 import type { Database } from "@/lib/supabase/types";
 
 type OrgUpdate = Database["public"]["Tables"]["organizations"]["Update"];
 
 const ORG_COLUMNS =
-  "id, name, type, description, city, logo_url, verified, website, public_email, public_phone, facebook_url, instagram_url, rib_holder, bank_name, rib, donation_instructions, donation_url";
+  "id, name, type, description, city, logo_url, verified, website, public_email, public_phone, facebook_url, instagram_url, rib_holder, bank_name, rib, donation_instructions, donation_url, created_at, owner_id";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") return getOrganization(req, res);
@@ -74,10 +75,63 @@ async function getOrganization(req: NextApiRequest, res: NextApiResponse) {
     };
   });
 
+  // Badge metrics count every action the organization created, drafts included.
+  const { data: orgEvents } = await admin
+    .from("events")
+    .select("id, created_at")
+    .eq("org_id", id);
+  const allEvents = orgEvents ?? [];
+  let volunteersReached = 0;
+  if (allEvents.length > 0) {
+    const { count } = await admin
+      .from("volunteers")
+      .select("event_id", { count: "exact", head: true })
+      .in(
+        "event_id",
+        allEvents.map((event) => event.id),
+      );
+    volunteersReached = count ?? 0;
+  }
+
+  const now = Date.now();
+  const ninetyDaysAgo = now - 90 * 24 * 60 * 60 * 1000;
+  // Tenure follows the owner account so the same organization shows the same
+  // Ancienneté here and on its public profile.
+  const { data: ownerProfile } = await admin
+    .from("profiles")
+    .select("created_at")
+    .eq("id", orgResult.data.owner_id)
+    .maybeSingle();
+  const tenureStart =
+    ownerProfile?.created_at ?? orgResult.data.created_at ?? null;
+  const createdAt = tenureStart ? new Date(tenureStart).getTime() : now;
+  const tenureMonths = Math.max(
+    0,
+    Math.floor((now - createdAt) / (1000 * 60 * 60 * 24 * 30.4375)),
+  );
+  const recentEvents = allEvents.filter(
+    (event) =>
+      event.created_at && new Date(event.created_at).getTime() >= ninetyDaysAgo,
+  ).length;
+  const badgeTracks = buildBadgeTracks("organization", {
+    tenureMonths,
+    eventsCreated: allEvents.length,
+    volunteersReached,
+    actionsJoined: 0,
+    momentum: recentEvents,
+  });
+
   res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
   return res.status(200).json({
     organization: orgResult.data,
     events: eventsWithCounts,
+    badge_tracks: badgeTracks,
+    badge_stats: {
+      tenure_months: tenureMonths,
+      events_created: allEvents.length,
+      volunteers_reached: volunteersReached,
+    },
+    badges_earned: earnedBadgeCount(badgeTracks),
   });
 }
 
