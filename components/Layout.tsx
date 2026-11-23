@@ -11,7 +11,7 @@ import Footer from "./Footer";
  */
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <Stack as="div" direction="column" style={{ minHeight: "100vh" }}>
+    <Stack as="div" direction="column" gap={0} style={{ minHeight: "100vh" }}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-red-700 focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500"

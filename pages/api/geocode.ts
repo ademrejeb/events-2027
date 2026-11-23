@@ -156,6 +156,7 @@ export default async function handler(
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
         return {
           display_name: (r.display_name ?? "").slice(0, 300),
+          name: (r.display_name ?? "").split(",")[0]?.trim().slice(0, 120) || undefined,
           lat: latitude,
           lng: longitude,
           kind:

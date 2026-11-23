@@ -127,6 +127,32 @@ dialog {
   }
 }
 
+/* --- Home hero entrance (transform/opacity only) --- */
+@keyframes yl-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.yl-rise {
+  animation: yl-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.yl-rise-2 {
+  animation-delay: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yl-rise {
+    animation: none;
+  }
+}
+
 /* --- Auth background: dense diagonal quote lanes --- */
 @keyframes yl-marquee {
   from {

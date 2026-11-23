@@ -169,7 +169,7 @@ export default function EventMap({
         zoom: initialView.current.zoom,
         minZoom: 5,
         maxZoom: 19,
-        attributionControl: { compact: false },
+        attributionControl: false,
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
@@ -328,6 +328,9 @@ export default function EventMap({
             {item.label}
           </span>
         ))}
+        <span className="ml-auto self-center text-[10px] text-zinc-400">
+          © OpenStreetMap · OpenFreeMap
+        </span>
       </div>
     </div>
   );

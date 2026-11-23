@@ -233,11 +233,29 @@ export default function EventDetailPage() {
 
   const points = [
     ...(event.lat != null && event.lng != null
-      ? [{ id: event.id, title: event.title, city: event.city, lat: event.lat, lng: event.lng, start_at: event.start_at }]
+      ? [{
+          id: event.id,
+          title: event.title,
+          city: event.city,
+          lat: event.lat,
+          lng: event.lng,
+          start_at: event.start_at,
+          category_slug: event.event_categories.slug,
+          category_name: event.event_categories.name,
+        }]
       : []),
     ...(event.locations ?? [])
       .filter((l) => l && typeof l.lat === "number" && typeof l.lng === "number")
-      .map((l, i) => ({ id: `${event.id}-${i}`, title: l.label || `Lieu ${i + 1}`, city: event.city, lat: l.lat, lng: l.lng, start_at: event.start_at })),
+      .map((l, i) => ({
+        id: `${event.id}-${i}`,
+        title: l.label || `Lieu ${i + 1}`,
+        city: event.city,
+        lat: l.lat,
+        lng: l.lng,
+        start_at: event.start_at,
+        category_slug: event.event_categories.slug,
+        category_name: event.event_categories.name,
+      })),
   ];
 
   const progress =

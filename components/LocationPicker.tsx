@@ -10,6 +10,7 @@ import {
 
 type GeoResult = {
   display_name: string;
+  name?: string;
   lat: number;
   lng: number;
   kind?: string;
@@ -38,10 +39,12 @@ export default function LocationPicker({
   lat,
   lng,
   onChange,
+  onPlace,
 }: {
   lat: string;
   lng: string;
   onChange: (lat: string, lng: string) => void;
+  onPlace?: (label: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -105,7 +108,7 @@ export default function LocationPicker({
         zoom: start ? 16 : 6,
         minZoom: 5,
         maxZoom: 19,
-        attributionControl: { compact: false },
+        attributionControl: false,
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
@@ -168,8 +171,7 @@ export default function LocationPicker({
     map.flyTo({ center: [focus[1], focus[0]], zoom: 16, duration: 800 });
   }, [ready, focus]);
 
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
+  async function search() {
     const q = query.trim();
     if (!q && !placeType) {
       setNotice("Saisissez un nom ou choisissez un type de lieu.");
@@ -244,7 +246,7 @@ export default function LocationPicker({
       </div>
 
       <div className="relative">
-        <form onSubmit={search} className="flex gap-2">
+        <div className="flex gap-2">
           <div className="relative flex-1">
             <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />
@@ -253,13 +255,20 @@ export default function LocationPicker({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void search();
+                }
+              }}
               placeholder="École, hôpital, adresse, quartier…"
               aria-label="Rechercher un lieu"
               className="w-full rounded-xl border border-zinc-300 bg-white py-2.5 pl-9 pr-3 text-sm text-zinc-900 outline-none transition-colors focus:border-red-500 focus:ring-2 focus:ring-red-100"
             />
           </div>
           <button
-            type="submit"
+            type="button"
+            onClick={() => void search()}
             disabled={searching}
             className="rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
           >
@@ -274,7 +283,7 @@ export default function LocationPicker({
               "Chercher"
             )}
           </button>
-        </form>
+        </div>
 
         {results.length > 0 && (
           <ul className="absolute z-[600] mt-1 max-h-72 w-full overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg">
@@ -287,6 +296,7 @@ export default function LocationPicker({
                     setResults([]);
                     setQuery(r.display_name);
                     setNotice(null);
+                    onPlace?.(r.name || r.display_name);
                   }}
                   className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-red-50"
                 >
@@ -332,6 +342,9 @@ export default function LocationPicker({
           votre position.
         </p>
       )}
+      <p className="text-right text-[10px] text-zinc-400">
+        © OpenStreetMap · OpenFreeMap
+      </p>
     </div>
   );
 }

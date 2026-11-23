@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import ImageUpload from "@/components/ImageUpload";
@@ -107,6 +107,52 @@ export default function EventForm({
   const [pendingLat, setPendingLat] = useState("");
   const [pendingLng, setPendingLng] = useState("");
   const [showExtra, setShowExtra] = useState(false);
+  const [placeOptions, setPlaceOptions] = useState<{
+    cities: string[];
+    locations: string[];
+  }>({ cities: [], locations: [] });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/places", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || controller.signal.aborted) return;
+        setPlaceOptions({
+          cities: Array.isArray(data.cities) ? data.cities : [],
+          locations: Array.isArray(data.locations) ? data.locations : [],
+        });
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  function canonicalPlace(value: string, options: string[]): string {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    if (!normalized) return "";
+    const key = normalized.toLocaleLowerCase("fr");
+    return (
+      options.find((option) => option.toLocaleLowerCase("fr") === key) ?? normalized
+    );
+  }
+
+  function rememberPlace(label: string) {
+    const value = canonicalPlace(label, placeOptions.locations);
+    if (!value) return;
+    setValues((prev) => ({ ...prev, location: value }));
+    setPlaceOptions((prev) =>
+      prev.locations.some(
+        (option) => option.toLocaleLowerCase("fr") === value.toLocaleLowerCase("fr"),
+      )
+        ? prev
+        : {
+            ...prev,
+            locations: [...prev.locations, value].sort((a, b) =>
+              a.localeCompare(b, "fr"),
+            ),
+          },
+    );
+  }
 
   const errors = useMemo(() => validate(values), [values]);
   const invalid = Object.keys(errors).length > 0;
@@ -245,8 +291,10 @@ export default function EventForm({
                 <FormField label="Ville" required error={show("city")}>
                   <Input
                     type="text"
+                    list="yl-city-options"
                     value={values.city}
                     onChange={(e) => set("city", e.target.value)}
+                    onBlur={() => set("city", canonicalPlace(values.city, placeOptions.cities))}
                     placeholder="Tunis"
                     aria-invalid={touched && !!errors.city}
                   />
@@ -254,9 +302,13 @@ export default function EventForm({
                 <FormField label="Lieu précis" optional>
                   <Input
                     type="text"
+                    list="yl-location-options"
                     value={values.location}
                     onChange={(e) => set("location", e.target.value)}
-                    placeholder="Place du village, Sidi Bou Saïd"
+                    onBlur={() =>
+                      set("location", canonicalPlace(values.location, placeOptions.locations))
+                    }
+                    placeholder="Choisissez un lieu…"
                   />
                 </FormField>
               </div>
@@ -270,6 +322,7 @@ export default function EventForm({
                     lat={values.lat}
                     lng={values.lng}
                     onChange={(la, ln) => setValues((p) => ({ ...p, lat: la, lng: ln }))}
+                    onPlace={rememberPlace}
                   />
                 </div>
               </div>
@@ -499,6 +552,25 @@ export default function EventForm({
             {mode === "create" ? "Créer l’action" : "Enregistrer les modifications"}
           </Button>
         </Stack>
+
+        <datalist id="yl-city-options">
+          {placeOptions.cities.map((city) => (
+            <option key={city} value={city} />
+          ))}
+        </datalist>
+        <datalist id="yl-location-options">
+          {[...placeOptions.locations, ...(values.location ? [values.location] : [])]
+            .filter(
+              (value, index, all) =>
+                all.findIndex(
+                  (other) =>
+                    other.toLocaleLowerCase("fr") === value.toLocaleLowerCase("fr"),
+                ) === index,
+            )
+            .map((location) => (
+              <option key={location} value={location} />
+            ))}
+        </datalist>
       </Stack>
     </form>
   );

@@ -107,7 +107,7 @@ export default function OrgProfile() {
         <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_20%_20%,rgba(255,255,255,.3),transparent_40%),radial-gradient(circle_at_80%_60%,rgba(255,255,255,.25),transparent_40%)]" />
       </div>
 
-      <div className="mx-auto max-w-5xl px-4">
+      <div className="relative z-10 mx-auto max-w-5xl px-4">
         <div className="-mt-16 flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-gradient-to-br from-red-500 to-orange-500 text-5xl font-extrabold text-white shadow-lg">
             {org.logo_url ? (
